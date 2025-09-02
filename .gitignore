@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+.env
+.env.*
+
+# Build artifacts
+build/
+dist/
+.eggs/
+*.egg-info/
+*.egg
+wheels/
+
+# IDE/editor
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+logs/
+*/logs/
+
+# Data and large assets
+*.wav
+*.flac
+*.mp3
+*.ogg
+*.m4a
+*.wf
+
+# Project-specific large directories
+kimi_deployment/kimi_model/
+kimi_deployment/data/
+WhisperLive/data/
+WhisperLive/docs/doctrees/
+kimi_deployment/kimi_audio.egg-info/
