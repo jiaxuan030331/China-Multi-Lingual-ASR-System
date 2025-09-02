@@ -1,0 +1,74 @@
+# === 深度学习核心 ===
+torch==2.4.1
+torchaudio==2.4.1
+torchvision==0.19.1
+pytorch-lightning==2.5.1.post0
+flash-attn==2.7.4.post1
+triton==3.0.0
+nvidia-pyindex
+nvidia-pip
+
+# === Hugging Face / NLP / ASR ===
+transformers
+datasets
+huggingface_hub
+openai-whisper
+faster-whisper
+sentencepiece
+tiktoken
+safetensors
+
+# === 音频处理 ===
+librosa
+soundfile
+pydub
+sox
+soxr
+conformer==0.3.2
+hyperpyyaml
+pyaudio
+
+# === 数据处理与科学计算 ===
+numpy
+scipy
+pandas
+scikit-learn
+numba
+llvmlite
+ujson
+
+# === Web 后端与 API ===
+fastapi
+uvicorn[standard]
+starlette
+websockets
+aiohttp
+aiohappyeyeballs
+python-multipart
+httptools
+uvloop
+
+# === 辅助与工具 ===
+packaging
+jinja2
+jsonlines
+validators
+sty
+accelerate
+colorama
+omegaconf==2.3.0
+six==1.16.0
+diffusers
+pillow
+easydict
+fire
+immutabledict
+rich
+wget
+gdown
+loguru
+decord
+blobfile
+timm
+sacrebleu==1.5.1
+tqdm
