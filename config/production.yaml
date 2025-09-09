@@ -1,0 +1,103 @@
+# Production Configuration for China Multi-Lingual ASR System
+# This configuration is optimized for production deployment
+
+# Model Configuration
+models:
+  whisper:
+    model_path: "/models/whisper-large-v3-ct2"
+    compute_type: "int8_float16"  # Quantized for production
+    device: "cuda"
+    device_index: 0
+  
+  kimi:
+    model_path: "/models/kimi-audio"
+    torch_dtype: "bfloat16"
+    device: "cuda"
+    device_index: 0
+    load_detokenizer: false
+
+# Language Routing Configuration
+language_routing:
+  confidence_threshold: 0.7
+  supported_languages: ["zh", "en", "yue", "zh-tw"]
+  kimi_languages: ["zh", "en"]
+  fallback_engine: "whisper"
+  detection_method: "hybrid"  # Use hybrid detection in production
+
+# Performance Configuration
+performance:
+  max_concurrent_sessions: 100
+  encoder_batch_size: 8
+  memory_optimization: true
+  enable_quantization: true
+
+# Server Configuration
+server:
+  websocket:
+    host: "0.0.0.0"
+    port: 9090
+    max_connections: 100
+    connection_timeout: 800  # 13+ minutes
+  
+  api:
+    host: "0.0.0.0"
+    port: 8080
+    enable_cors: false
+    debug: false
+
+# Audio Processing
+audio:
+  sample_rate: 16000
+  chunk_size: 4096
+  max_audio_length: 600  # 10 minutes max
+  enable_vad: true
+  vad_threshold: 0.5
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/production.log"
+  max_size_mb: 500
+  backup_count: 10
+  enable_console: false
+
+# Monitoring and Metrics
+monitoring:
+  enable_metrics: true
+  metrics_port: 8081
+  enable_health_check: true
+  health_check_interval: 60
+  prometheus_enabled: true
+
+# Security Configuration
+security:
+  enable_authentication: true
+  api_key_required: true
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 60
+    requests_per_hour: 1000
+
+# Resource Limits
+resources:
+  max_memory_per_session_mb: 512
+  max_gpu_memory_mb: 8192
+  max_cpu_cores_per_session: 2
+
+# Feature Flags
+features:
+  enable_integrated_asr: true
+  enable_language_detection: true
+  enable_custom_lid: true
+  enable_word_timestamps: false  # Disable for better performance
+  enable_confidence_scores: true
+  enable_fallback_routing: true
+
+# Production Optimizations
+optimizations:
+  enable_model_caching: true
+  enable_result_caching: false
+  enable_audio_preprocessing_cache: true
+  batch_processing: true
+  lazy_loading: true 
