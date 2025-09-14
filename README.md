@@ -193,30 +193,23 @@ performance:
 
 ## 📊 Performance Metrics
 
-### Latency Benchmarks
-- **First Token**: <200ms
-- **Subsequent Tokens**: <100ms
-- **End-to-End**: <500ms (30s audio)
 
-### Accuracy Metrics
-- **Mandarin**: 95%+ accuracy on conversational speech
-- **English**: 97%+ accuracy on clear speech
-- **Cantonese**: 85%+ accuracy (significant improvement from baseline)
+
+
 
 ### Resource Usage
-- **Memory**: 6GB VRAM (quantized) vs 12GB (full precision)
-- **CPU**: <30% utilization on 8-core systems
+- **Memory**: Around 30GB
 - **Throughput**: 100+ concurrent sessions per GPU
 
 ## 🛠️ Development Roadmap
 
-### Phase 1: Core Integration (Weeks 1-2)
+### Phase 1: Core Integration (Weeks 1-2) Finished
 - [x] Project structure setup
 - [ ] IntegratedASR core implementation
 - [ ] Basic language routing
 - [ ] WebSocket server integration
 
-### Phase 2: Advanced Features (Weeks 3-4)
+### Phase 2: Advanced Features (Weeks 3-4) Finished
 - [ ] Custom language identification module
 - [ ] Performance optimization (quantization, batching)
 - [ ] Comprehensive error handling
