@@ -7,32 +7,17 @@ from loguru import logger
 from transformers import AutoTokenizer
 
 
-from kimia_infer.models.tokenizer.whisper_Lv3.whisper import WhisperEncoder
-from kimia_infer.models.tokenizer.glm4_tokenizer import Glm4Tokenizer
-from kimia_infer.utils.data import KimiAContent
-from kimia_infer.utils.special_tokens import instantiate_extra_tokens
+from kimi_deployment.kimia_infer.models.tokenizer.whisper_Lv3.whisper import WhisperEncoder
+from kimi_deployment.kimia_infer.models.tokenizer.glm4_tokenizer import Glm4Tokenizer
+from kimi_deployment.kimia_infer.utils.data import KimiAContent
+from kimi_deployment.kimia_infer.utils.special_tokens import instantiate_extra_tokens
 
 class KimiAPromptManager:
     def __init__(self, model_path: str, kimia_token_offset: int):
-        # 当前文件的目录：/data/kimi_deployment/kimia_infer/api
-        current_dir = os.path.abspath(os.path.dirname(__file__))
-
-        # 退回到项目根目录 kimi_deployment
-        project_root = os.path.abspath(os.path.join(current_dir, "../../"))
-
         
-        # 拼接到模型路径
-        glm4_voice_tokenizer_path = os.path.join(
-            project_root,
-            "kimi_model",
-            "models--THUDM--glm-4-voice-tokenizer",
-            "snapshots",
-            "a5f2404e63c84e92f5238908e1706316324ebafa"
-        )
-
-        
-        self.audio_tokenizer = Glm4Tokenizer(glm4_voice_tokenizer_path)
+        self.audio_tokenizer = Glm4Tokenizer("THUDM/glm-4-voice-tokenizer")
         self.audio_tokenizer = self.audio_tokenizer.to(torch.cuda.current_device())
+        
 
         logger.info(f"Looking for resources in {model_path}")
         logger.info(f"Loading whisper model")

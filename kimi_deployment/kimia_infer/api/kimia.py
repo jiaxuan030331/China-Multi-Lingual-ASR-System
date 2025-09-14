@@ -6,17 +6,17 @@ from loguru import logger
 from huggingface_hub import cached_assets_path
 from transformers import AutoModelForCausalLM
 import torchaudio
-from kimia_infer.models.detokenizer import get_audio_detokenizer
+from kimi_deployment.kimia_infer.models.detokenizer import get_audio_detokenizer
 from .prompt_manager import KimiAPromptManager
-from kimia_infer.utils.sampler import KimiASampler
+from kimi_deployment.kimia_infer.utils.sampler import KimiASampler
 from huggingface_hub import snapshot_download
 import numpy as np
-from kimia_infer.utils.data import KimiAContent
-from kimia_infer.utils.special_tokens import instantiate_extra_tokens
-from kimia_infer.models.tokenizer.glm4_tokenizer import Glm4Tokenizer
-from kimia_infer.models.tokenizer.whisper_Lv3.whisper import WhisperEncoder
+from kimi_deployment.kimia_infer.utils.data import KimiAContent
+from kimi_deployment.kimia_infer.utils.special_tokens import instantiate_extra_tokens
+from kimi_deployment.kimia_infer.models.tokenizer.glm4_tokenizer import Glm4Tokenizer
+from kimi_deployment.kimia_infer.models.tokenizer.whisper_Lv3.whisper import WhisperEncoder
 from transformers import AutoTokenizer
-from kimia_infer.models.tokenizer.glm4.speech_tokenizer.utils import extract_speech_token
+from kimi_deployment.kimia_infer.models.tokenizer.glm4.speech_tokenizer.utils import extract_speech_token
 import torch
 import librosa
 
@@ -24,7 +24,7 @@ import librosa
 class KimiAudio(object):
     def __init__(
         self,
-        model_path: str,
+        model_path_or_name: str ,
         load_detokenizer: bool = True,
         device: str = "cuda",
         device_index: int = 0,
@@ -33,11 +33,12 @@ class KimiAudio(object):
 
         
         
-        if os.path.exists(model_path):
+        if os.path.exists(model_path_or_name):
             print("Loading model from local path.")
-            cache_path = model_path
+            cache_path = model_path_or_name
         else:
-            cache_path = snapshot_download(model_path)
+            print(f'model_path_or_name: {model_path_or_name}')
+            cache_path = snapshot_download(model_path_or_name)
 
         logger.info(f"Looking for resources in {cache_path}")
         logger.info(f"Loading whisper model")

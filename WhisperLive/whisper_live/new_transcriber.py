@@ -152,15 +152,18 @@ class WhisperModel:
             self.id2lang = {0: "zh", 1: "en", 2: "yue"}
             self.id2lang_token = {0: "<|zh|>", 1: "<|en|>", 2: "<|yue|>"}
             print("✅ With custom language predictor loaded")
-
+        
         if os.path.isdir(model_size_or_path):
-            model_path = model_size_or_path
-        else:
+                model_path = model_size_or_path
+        else:   
+            
             model_path = download_model(
                 model_size_or_path,
                 local_files_only=local_files_only,
                 cache_dir=download_root,
             )
+            print(f"✅ downloaded model from huggingface")
+        
 
         self.model = ctranslate2.models.Whisper(
             model_path,

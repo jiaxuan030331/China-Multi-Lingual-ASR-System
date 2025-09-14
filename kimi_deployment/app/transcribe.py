@@ -4,7 +4,7 @@ import soundfile as sf
 import numpy as np
 import io
 from pydub import AudioSegment
-from app.load_model import model_lock  # 线程锁，保证模型线程安全
+from kimi_deployment.app.load_model import model_lock  # 线程锁，保证模型线程安全
 from typing import Union
 import os
 import librosa

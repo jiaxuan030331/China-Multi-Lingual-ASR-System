@@ -1,8 +1,8 @@
 # app/fastapi_api.py
 from fastapi import FastAPI, UploadFile, File, Request
 from fastapi.responses import JSONResponse
-from app.load_model import load_kimi_model, model_lock
-from app.transcribe import transcribe_auto
+from kimi_deployment.app.load_model import load_kimi_model, model_lock
+from kimi_deployment.app.transcribe import transcribe_auto
 from fastapi.concurrency import run_in_threadpool
 import os
 from typing import Optional

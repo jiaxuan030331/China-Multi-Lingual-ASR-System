@@ -11,8 +11,8 @@ from torch import nn
 class Glm4Tokenizer(nn.Module):
     def __init__(self, tokenizer_path):
         super().__init__()
-        self.whisper_model = WhisperVQEncoder.from_pretrained(tokenizer_path,local_files_only=True).eval()
-        self.feature_extractor = WhisperFeatureExtractor.from_pretrained(tokenizer_path,local_files_only=True)
+        self.whisper_model = WhisperVQEncoder.from_pretrained(tokenizer_path).eval()
+        self.feature_extractor = WhisperFeatureExtractor.from_pretrained(tokenizer_path)
 
     def tokenize(self, speech=None, audio_path=None, sr=16000):
         if audio_path:

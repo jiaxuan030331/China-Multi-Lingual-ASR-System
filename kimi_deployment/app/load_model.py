@@ -1,6 +1,6 @@
 # app/load_model.py
 
-from kimia_infer.api.kimia import KimiAudio
+from kimi_deployment.kimia_infer.api.kimia import KimiAudio
 import threading
 
 model_lock = threading.Lock()

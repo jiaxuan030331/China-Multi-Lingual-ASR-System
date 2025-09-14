@@ -1,41 +1,44 @@
-# === 深度学习核心 ===
 torch==2.4.1
 torchaudio==2.4.1
-torchvision==0.19.1
-pytorch-lightning==2.5.1.post0
-flash-attn==2.7.4.post1
-triton==3.0.0
-nvidia-pyindex
-nvidia-pip
-
-# === Hugging Face / NLP / ASR ===
-transformers
-datasets
-huggingface_hub
+packaging
+jinja2
 openai-whisper
-faster-whisper
-sentencepiece
-tiktoken
-safetensors
-
-# === 音频处理 ===
-librosa
-soundfile
-pydub
-sox
-soxr
-conformer==0.3.2
-hyperpyyaml
-pyaudio
-
-# === 数据处理与科学计算 ===
-numpy
-scipy
+jsonlines
 pandas
-scikit-learn
-numba
-llvmlite
+validators
+sty
+transformers
+librosa
+accelerate
+aiohttp
+colorama
+omegaconf==2.3.0
+sox
+six==1.16.0
+hyperpyyaml
+conformer==0.3.2
+diffusers
+pillow
+sentencepiece
+easydict
+fire
 ujson
+cairosvg
+immutabledict
+rich
+wget
+gdown
+datasets
+torchdyn==1.0.6
+huggingface_hub
+loguru
+blobfile
+timm
+sacrebleu==1.5.1
+soundfile
+tqdm
+deepspeed==0.16.9
+pydub
 
 # === Web 后端与 API ===
 fastapi
@@ -48,27 +51,6 @@ python-multipart
 httptools
 uvloop
 
-# === 辅助与工具 ===
-packaging
-jinja2
-jsonlines
-validators
-sty
-accelerate
-colorama
-omegaconf==2.3.0
-six==1.16.0
-diffusers
-pillow
-easydict
-fire
-immutabledict
-rich
-wget
-gdown
-loguru
-decord
-blobfile
-timm
-sacrebleu==1.5.1
-tqdm
+# === Flash Attention 需要单独安装 ===
+# 请在安装完上述所有包后，单独运行：
+# pip install flash_attn==2.7.4.post1 --no-build-isolation
