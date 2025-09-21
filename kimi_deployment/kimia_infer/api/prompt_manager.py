@@ -21,13 +21,13 @@ class KimiAPromptManager:
 
         logger.info(f"Looking for resources in {model_path}")
         logger.info(f"Loading whisper model")
-
+        '''
         self.whisper_model = WhisperEncoder(
             os.path.join(model_path, "whisper-large-v3"), mel_batch_size=20
         )
         self.whisper_model = self.whisper_model.to(torch.cuda.current_device())
         self.whisper_model = self.whisper_model.bfloat16()
-        self.whisper_model.eval()
+        self.whisper_model.eval()'''
 
         logger.info(f"Loading text tokenizer")
         self.text_tokenizer = AutoTokenizer.from_pretrained(
