@@ -28,7 +28,8 @@ class KimiAudio(object):
         load_detokenizer: bool = True,
         device: str = "cuda",
         device_index: int = 0,
-        torch_dtype: str = "bfloat16"
+        torch_dtype: str = "bfloat16",
+        other_encoder = None,
     ):
 
         
@@ -277,9 +278,9 @@ class KimiAudio(object):
         chats: list[dict],
         output_type="text",
         audio_temperature=0.0,
-        audio_top_k=5,
+        audio_top_k=3,
         text_temperature=0.0,
-        text_top_k=5,
+        text_top_k=3,
         audio_repetition_penalty=1.0,
         audio_repetition_window_size=64,
         text_repetition_penalty=1.0,
@@ -474,6 +475,179 @@ class KimiAudio(object):
 
         return generated_text
         
+    def main_encoder(
+        self, 
+        waveform: torch.Tensor, 
+        sr: int = 16000, 
+        prompt: str = "Please transcribe the audio: ",
+        audio_temperature=0.0,
+        audio_top_k=5,
+        text_temperature=0.0,
+        text_top_k=5,
+        audio_repetition_penalty=1.0,
+        audio_repetition_window_size=64,
+        text_repetition_penalty=1.0,
+        text_repetition_window_size=16,
+        max_new_tokens=-1
+    ):
+        """
+
+        """
+
+        ### -------- Step 1: 音频处理（离散 token + whisper 特征） -------- ###
+
+        # 1.1 将 waveform 封装为 batch 格式
+        glm_audio = torch.tensor(waveform).unsqueeze(0)
+        glm_audio_info = (glm_audio, sr)
+
+        # 1.2 通过 GLM 音频 tokenizer 提取 audio token（类似音频编码）
+        glm_audio_tokens = extract_speech_token(
+            self.prompt_manager.audio_tokenizer.whisper_model,
+            self.prompt_manager.audio_tokenizer.feature_extractor,
+            [glm_audio_info]
+        )[0]
+
+        # 1.3 转为 tensor 并加 kimia_token_offset（防止和 text 冲突）
+        glm_audio_tokens = torch.tensor(glm_audio_tokens).unsqueeze(0)
+        wav_tokens = glm_audio_tokens + self.prompt_manager.kimia_token_offset
+        speech_tokens = wav_tokens.squeeze(0).cpu().numpy().tolist()
+
+        # 1.4 编码文本 prompt 为 text_token_ids
+        text_tokens = self.prompt_manager.text_tokenizer.encode(prompt, bos=False, eos=False)
+        return speech_tokens, text_tokens
+
+        
+
+
+ 
+    
+    def main_decoder(
+        self, 
+        speech_tokens,
+        text_tokens,
+        whisper_feature,
+        audio_temperature=0.0,
+        audio_top_k=5,
+        text_temperature=0.0,
+        text_top_k=5,
+        audio_repetition_penalty=1.0,
+        audio_repetition_window_size=64,
+        text_repetition_penalty=1.0,
+        text_repetition_window_size=16,
+        max_new_tokens=-1
+    ):
+        """
+
+        """
+
+        ### -------- Step 1: 音频处理（离散 token + whisper 特征） -------- ###
+
+        # 1.5 提取 Whisper 连续特征（float 特征，用于上下文引导）
+        # 如果 whisper_feature 来自 CT2 encoder_output，需要转换为 Kimi 格式
+        if hasattr(whisper_feature, 'dtype') and str(whisper_feature.dtype) != 'torch.bfloat16':
+            # 从 CT2 StorageView 转换
+            import ctranslate2 
+            import torch
+            import numpy as np
+            
+            if isinstance(whisper_feature, ctranslate2.StorageView):
+                # CT2 StorageView -> numpy -> torch.Tensor
+                
+                whisper_feature = whisper_feature.to_device(ctranslate2.Device(0)).to(ctranslate2.DataType.float32)
+                whisper_feature = np.array(whisper_feature)
+                if whisper_feature.dtype == object:
+                    whisper_feature = np.stack(whisper_feature)
+                # 确保 padding 到 4 的倍数
+                pad_len = (4 - (whisper_feature.shape[1] % 4)) % 4
+                if pad_len:
+                    whisper_feature = np.pad(whisper_feature, ((0,0),(0,pad_len),(0,0)), mode="constant")
+                whisper_feature = torch.from_numpy(whisper_feature).to(torch.bfloat16).cpu()
+        print(f"[Kimi] whisper_feature type={type(whisper_feature)}, dtype={getattr(whisper_feature, 'dtype', None)}, device={getattr(whisper_feature, 'device', None)}, shape={tuple(whisper_feature.shape) if hasattr(whisper_feature, 'shape') else None}")
+        
+        
+        whisper_feature = whisper_feature.reshape(
+            whisper_feature.shape[0],
+            whisper_feature.shape[1] // 4,
+            whisper_feature.shape[2] * 4,
+        )
+
+        ### -------- Step 2: 构造 KimiAContent 实例 -------- ###
+
+        msg = KimiAContent()
+
+        # 添加 role 起始标记（user）
+        msg.audio_append(self.prompt_manager.extra_tokens.kimia_user_msg_start)
+        msg.text_append(self.prompt_manager.extra_tokens.kimia_text_blank)
+
+        # 添加文本 prompt → text token
+        msg.text_extend(text_tokens)
+        msg.audio_extend([self.prompt_manager.extra_tokens.kimia_text_blank] * len(text_tokens))
+
+        # 添加音频 token（带 media_begin/media_end 控制符）
+        msg.audio_append(self.prompt_manager.extra_tokens.media_begin)
+        msg.audio_extend(speech_tokens, is_continuous=True)
+        msg.audio_append(self.prompt_manager.extra_tokens.media_end)
+        msg.text_extend([self.prompt_manager.extra_tokens.kimia_text_blank] * (len(speech_tokens) + 2))
+
+        # 添加切换标记，代表“语音内容结束，可生成回答”
+        msg.audio_append(self.prompt_manager.extra_tokens.kimia_speech_ct_id)
+        msg.text_append(self.prompt_manager.extra_tokens.kimia_text_blank)
+
+        # 添加消息终止 token
+        msg.audio_append(self.prompt_manager.extra_tokens.msg_end)
+        msg.text_append(self.prompt_manager.extra_tokens.kimia_text_blank)
+
+        # 添加 Whisper 特征
+        msg.continuous_feature.append(whisper_feature)
+
+        # 添加 assistant 响应开始（表示模型开始生成）
+        msg_assist = self.prompt_manager.tokenize_message(
+            message={"role": "assistant", "message_type": None},
+            tokenize_role=True,
+            has_ct_token=False,
+            has_msg_end_token=False,
+        )
+        msg.merge(msg_assist)
+        assert msg.is_valid()
+
+        ### -------- Step 3: 模型推理 -------- ###
+
+        # 将内容结构化为 tensor，供模型使用
+        audio_input_ids, text_input_ids, is_continuous_mask = msg.to_tensor()
+        audio_features = [f.to(torch.cuda.current_device()) for f in msg.continuous_feature]
+
+        # 自动设置生成长度限制
+        
+        max_new_tokens = 7500 - audio_input_ids.shape[1]
+
+        # 进入模型核心解码逻辑（逐步生成 text token）
+        _, generated_text_tokens = self._generate_loop(
+            audio_input_ids=audio_input_ids.to(torch.cuda.current_device()),
+            text_input_ids=text_input_ids.to(torch.cuda.current_device()),
+            max_new_tokens=max_new_tokens,
+            is_continuous_mask=is_continuous_mask.to(torch.cuda.current_device()),
+            continous_feature=audio_features,
+            audio_temperature=audio_temperature,
+            audio_top_k=audio_top_k,
+            audio_repetition_penalty=audio_repetition_penalty,
+            audio_repetition_window_size=audio_repetition_window_size,
+            text_top_k=text_top_k,
+            text_temperature=text_temperature,
+            text_repetition_penalty=text_repetition_penalty,
+            text_repetition_window_size=text_repetition_window_size, 
+            output_type='text',
+        )
+
+        # 去除非法 token（如 audio token 混入）
+        generated_text_tokens = [t for t in generated_text_tokens if t < self.kimia_token_offset]
+
+        # 解码为字符串
+        generated_text = self.detokenize_text(generated_text_tokens)
+
+        return generated_text
+
+
+
     def detokenize_audio(self, audio_tokens):
         if self.detokenizer is None:
             raise ValueError("Detokenizer is not initialized")

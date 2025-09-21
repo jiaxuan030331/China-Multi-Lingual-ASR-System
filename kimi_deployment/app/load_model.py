@@ -23,7 +23,7 @@ def load_kimi_model(
     global _model_instance, _model_config
 
     requested_config = {
-        "model_path": model_path,
+        "model_path_or_name": model_path,
         "device": device,
         "device_index": device_index,
         "torch_dtype": torch_dtype,

@@ -1225,35 +1225,27 @@ class WhisperModel:
         # 1. 移动 encoder_output 到 CPU 并转为 numpy
         
         #start = time.time()
-        encoder_output_cpu = encoder_output.to_device(ctranslate2.Device(0))  # 0 = CPU
-        encoder_output_np = np.array(encoder_output_cpu)
-
-        if encoder_output_np.dtype == object:
-            encoder_output_np = np.stack(encoder_output_np)
-        encoder_output_np = encoder_output_np.astype(np.float32)
+        enc = encoder_output.to_device(ctranslate2.Device(0))  # 0 = CPU
+        enc = enc.to(ctranslate2.DataType.float32)
+        arr = np.array(enc)
+        if arr.dtype == object:
+            arr = np.stack(arr)
+        
 
         # 2. 池化 → (B, H)
-        pooled = encoder_output_np.mean(axis=1)  # shape: (1, H)
+        pooled = arr.mean(axis=1)  # shape: (1, H)
         pooled_tensor = torch.tensor(pooled, dtype=torch.float32)
 
         # 3. 前向分类
         with torch.no_grad():
             logits = self.language_classifier(pooled_tensor)
             probs = torch.softmax(logits, dim=-1).squeeze().cpu().numpy()
-  
-        # 4. 构造返回结果（按概率从大到小排序）
-        #print('time taken: ',time.time()-start)
 
-        
-        sorted_indices = np.argsort(probs)[::-1]  # 从大到小排序索引
-        result = [(self.id2lang_token[i], float(probs[i])) for i in sorted_indices]
-     
-        #result = [(self.id2lang_token[i], float(probs[i])) for i in range(len(probs))]
-        
-        
-        #print(f"Language detection result: {[result]}")
-        return [result]
-    
+        # 仅返回最大概率语言与其概率
+        max_idx = int(np.argmax(probs))
+        language = self.id2lang_token[max_idx]
+        confidence = float(probs[max_idx])
+        return language, confidence
 
 def restore_speech_timestamps(
     segments: Iterable[Segment],
