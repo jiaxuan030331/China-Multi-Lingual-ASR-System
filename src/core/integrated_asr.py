@@ -248,7 +248,7 @@ class IntegratedASR:
         self,
         ct2_model_path = 'large-v3', #default to large-v3 for compatibility with ctranslate2
         kimi_model_path_or_name: str = "moonshotai/Kimi-Audio-7B-Instruct",
-        lid_model_path: str = "/workspace/ASR/WhisperLive/language_fnn_only2.pt",
+        lid_model_path: str = "/workspace/ASR/models/lid/language_fnn_only2.pt",
         confidence_threshold: float = 0.7,
         load_kimi: bool = True,
         

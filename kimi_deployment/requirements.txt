@@ -39,6 +39,9 @@ soundfile
 tqdm
 deepspeed==0.16.9
 pydub
+scipy
+PyAudio
+faster-whisper==1.1.1
 
 # === Web 后端与 API ===
 fastapi
@@ -50,7 +53,17 @@ aiohappyeyeballs
 python-multipart
 httptools
 uvloop
+PyAudio
+ffmpeg-python
+websocket-client
+websocket-python
+numba
+kaldialign
 
 # === Flash Attention 需要单独安装 ===
 # 请在安装完上述所有包后，单独运行：
 # pip install flash_attn==2.7.4.post1 --no-build-isolation
+
+
+
+
