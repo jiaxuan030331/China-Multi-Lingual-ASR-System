@@ -14,29 +14,25 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 %%{init:{
   "theme":"base",
   "themeVariables":{
-    "background":"#ffffff",
-    "textColor":"#111111",
-    "lineColor":"#111111",
-    "fontSize":"18px",
-    "padding":16
+    "background":"#ffffff","textColor":"#111111","lineColor":"#111111",
+    "fontSize":"18px","padding":16
   },
   "flowchart":{"curve":"linear","nodeSpacing":90,"rankSpacing":140}
 }}%%
 flowchart LR
   classDef default fill:#ffffff,stroke:#111111,color:#111111;
 
-  TXT[Text] --> GLM4[GLM-4 from Kimi] --> KDEC[Kimi Decoder] --> OUT[Text]    %% edges 0,1,2
-  AUD[Audio] --> GLM4                                                           %% edge 3
+  TXT[Text] --> GLM4[GLM-4 from Kimi] --> KDEC[Kimi Decoder] --> OUT[Text]
+  AUD[Audio] --> GLM4
+  AUD --> CT2E[CT2 Whisper Encoder] --> DET{"English or Mandarin"}
+  DET -- "English or Mandarin" --> KDEC
+  DET -- "Other languages" --> CT2D[CT2 Whisper Decoder] --> OUT
 
-  AUD --> CT2E[CT2 Whisper Encoder] --> DET{English or Mandarin}               %% edges 4,5
-  DET -- English or Mandarin --> KDEC                                           %% edge 6
-  DET -- Other languages --> CT2D[CT2 Whisper Decoder] --> OUT                  %% edges 7,8
-
-  %% Arrow colors
-  %% Kimi path: edges 0,1,2,3,6  -> blue
-  linkStyle 0,1,2,3,6 stroke:#1d4ed8,stroke-width:2px,color:#111111;
-  %% CT2 path:  edges 4,5,7,8    -> green
-  linkStyle 4,5,7,8 stroke:#16a34a,stroke-width:2px,color:#111111;
+  %% edge order (for coloring):
+  %% 0:TXT->GLM4, 1:GLM4->KDEC, 2:KDEC->OUT, 3:AUD->GLM4,
+  %% 4:AUD->CT2E, 5:CT2E->DET, 6:DET->KDEC, 7:DET->CT2D, 8:CT2D->OUT
+  linkStyle 0,1,2,3,6 stroke:#1d4ed8,stroke-width:2px,color:#111111;  %% Kimi path
+  linkStyle 4,5,7,8   stroke:#16a34a,stroke-width:2px,color:#111111;  %% CT2 path
 ```
 
 ## 🌟 Key Features
