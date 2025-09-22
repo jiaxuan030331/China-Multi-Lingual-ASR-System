@@ -30,48 +30,30 @@ ASR/
 
 ### Architecture (Mermaid)
 ```mermaid
-flowchart LR
-  %% =======================
-  %% Integrated System
-  %% =======================
-  subgraph INT["Integrated System (Project Flow)"]
+flowchart TD
+  subgraph KIMI["Kimi (Embeddings)"]
     direction TB
-    I_TXT["Text"]:::int
-    I_AUD["Audio"]:::int
+    K_T[Text]
+    K_A[Audio]
+    K_TK[GLM-4 Tokenizer]
+    K_WE[Whisper Encoder]
+    K_E[Embedding Layer]
 
-    %% Text path
-    I_GLM4["GLM-4 (LLM)"]:::int
-    I_KIMID["Kimi Decoder (token→text)"]:::int
-    I_OUT1["Text"]:::int
-
-    %% Audio path
-    I_CT2E["CT2 Whisper Encoder (audio→embeddings)"]:::int
-    I_DET{"Router: English/Mandarin?"}:::decision
-    I_CT2D["CT2 Whisper Decoder (ASR)"]:::int
-    I_OUT2["Text"]:::int
-
-    %% Flows
-    I_TXT --> I_GLM4 --> I_KIMID --> I_OUT1
-    I_AUD --> I_GLM4
-    I_AUD --> I_CT2E --> I_DET
-    I_DET -- "EN/ZH" --> I_KIMID
-    I_DET -- "Other" --> I_CT2D --> I_OUT2
+    K_T --> K_TK --> K_E
+    K_A --> K_TK
+    K_A --> K_WE --> K_E
   end
 
-  %% Concise explanations (notes)
-  Note1["GLM-4: general reasoning; shares tokenizer with Kimi"]:::note
-  Note2["Kimi Decoder: converts GLM tokens to text output"]:::note
-  Note3["CT2: high-speed Whisper inference"]:::note
+  subgraph FW["faster-whisper (CT2)"]
+    direction TB
+    F_A[Audio]
+    F_WE[Whisper Encoder]
+    F_LD{Language Detection}
+    F_D[Decoder]
+    F_TXT[Text]
 
-  Note1 -.-> I_GLM4
-  Note2 -.-> I_KIMID
-  Note3 -.-> I_CT2E
-
-  %% --------- Styles ---------
-  classDef int fill:#E6FFEE,stroke:#2E8B57,color:#0F5132,stroke-width:1.5px;
-  classDef decision fill:#FFF0F6,stroke:#C71585,color:#5B1A42,stroke-width:1.5px;
-  classDef note fill:#F8F9FA,stroke:#A0A0A0,color:#333,stroke-dasharray:3 3,stroke-width:1px;
-
+    F_A --> F_WE --> F_LD --> F_D --> F_TXT
+  end
 '''
  
 
