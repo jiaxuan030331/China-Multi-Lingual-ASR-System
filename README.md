@@ -11,79 +11,26 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 
 ## 🏗️ System Architecture
 ```mermaid
-%%{init: {
-  "theme": "base",
-  "themeVariables": {
-    "background": "#ffffff",
-    "textColor": "#111827",
-    "lineColor": "#111827"
-  }
+%%{init:{
+  "theme":"base",
+  "themeVariables":{
+    "background":"#ffffff",
+    "textColor":"#111111",
+    "lineColor":"#111111",
+    "fontSize":"18px",
+    "padding":16
+  },
+  "flowchart":{"curve":"linear","nodeSpacing":90,"rankSpacing":140}
 }}%%
-flowchart TB
+flowchart LR
+  classDef default fill:#ffffff,stroke:#111111,color:#111111;
 
-  %% =======================
-  %% Systems (top row)
-  %% =======================
-  subgraph TOP["Systems"]
-    direction LR
+  TXT[Text] --> GLM4[GLM-4 (from Kimi)] --> KDEC[Kimi Decoder] --> OUT[Text]
+  AUD[Audio] --> GLM4
 
-    %% ---- Kimi (Embeddings) ----
-    subgraph KIMI["Kimi (Embeddings)"]
-      direction LR
-      K_T["Text"]:::neutral
-      K_A["Audio"]:::neutral
-      K_TK["GLM-4 Tokenizer"]:::kimi
-      K_WE["Whisper Encoder"]:::kimi
-      K_E["Embedding Layer"]:::neutral
-
-      K_T --> K_TK --> K_E
-      K_A --> K_TK
-      K_A --> K_WE --> K_E
-    end
-
-    %% ---- faster-whisper (CT2) ----
-    subgraph FW["faster-whisper (CT2)"]
-      direction LR
-      F_A["Audio"]:::neutral
-      F_WE["Whisper Encoder"]:::fw
-      F_LD{"Language Detection"}:::fw
-      F_D["Decoder"]:::fw
-      F_TXT["Text"]:::neutral
-
-      F_A --> F_WE --> F_LD --> F_D --> F_TXT
-    end
-  end
-
-  %% =======================
-  %% Integration (bottom)
-  %% =======================
-  subgraph INT["Integration (Project Flow)"]
-    direction LR
-    I_TXT["Text"]:::neutral
-    I_AUD["Audio"]:::neutral
-    I_GLM4["GLM-4 (from Kimi)"]:::kimi
-    I_KIMID["Kimi Decoder"]:::kimi
-    I_CT2E["CT2 Whisper Encoder"]:::fw
-    I_DET{"English / Mandarin?"}:::fw
-    I_CT2D["CT2 Whisper Decoder"]:::fw
-    I_OUT["Text"]:::neutral
-
-    %% Path via Kimi
-    I_TXT --> I_GLM4 --> I_KIMID --> I_OUT
-    I_AUD --> I_GLM4
-
-    %% Path via faster-whisper (CT2)
-    I_AUD --> I_CT2E --> I_DET
-    I_DET -- "English or Mandarin" --> I_KIMID
-    I_DET -- "Other languages" --> I_CT2D --> I_OUT
-  end
-
-  %% =======================
-  %% Styles
-  %% =======================
-  classDef neutral fill:#ffffff,stroke:#111827,color:#111827;
-  classDef kimi    fill:#e8f1ff,stroke:#1d4ed8,color:#111827;   %% blue
-  classDef fw      fill:#eaffea,stroke:#16a34a,color:#111827;   %% light green
+  AUD --> CT2E[CT2 Whisper Encoder] --> DET{English / Mandarin?}
+  DET -- "English or Mandarin" --> KDEC
+  DET -- "Other languages" --> CT2D[CT2 Whisper Decoder] --> OUT
 ```
 
 ## 🌟 Key Features
