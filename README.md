@@ -11,50 +11,53 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 
 ## 🏗️ System Architecture
 ```mermaid
-flowchart LR
+flowchart TB
   %% =======================
-  %% Kimi (Embeddings path)
+  %% Systems (top row)
   %% =======================
-  subgraph KIMI["Kimi (Embeddings)"]
+  subgraph SYS["Systems"]
     direction LR
-    K_T["Text"]
-    K_A["Audio"]
-    K_TK["GLM-4 Tokenizer"]
-    K_WE["Whisper Encoder"]
-    K_E["Embedding Layer"]
 
-    K_T --> K_TK --> K_E
-    K_A --> K_TK
-    K_A --> K_WE --> K_E
+    %% ---- Kimi (Embeddings) ----
+    subgraph KIMI["Kimi (Embeddings)"]
+      direction LR
+      K_T["Text"]:::neutral
+      K_A["Audio"]:::neutral
+      K_TK["GLM-4 Tokenizer"]:::kimi
+      K_WE["Whisper Encoder"]:::kimi
+      K_E["Embedding Layer"]:::neutral
+
+      K_T --> K_TK --> K_E
+      K_A --> K_TK
+      K_A --> K_WE --> K_E
+    end
+
+    %% ---- faster-whisper (CT2) ----
+    subgraph FW["faster-whisper (CT2)"]
+      direction LR
+      F_A["Audio"]:::neutral
+      F_WE["Whisper Encoder"]:::fw
+      F_LD{"Language Detection"}:::fw
+      F_D["Decoder"]:::fw
+      F_TXT["Text"]:::neutral
+
+      F_A --> F_WE --> F_LD --> F_D --> F_TXT
+    end
   end
 
-  %% ============================
-  %% faster-whisper (CT2) system
-  %% ============================
-  subgraph FW["faster-whisper (CT2)"]
-    direction LR
-    F_A["Audio"]
-    F_WE["Whisper Encoder"]
-    F_LD{"Language Detection"}
-    F_D["Decoder"]
-    F_TXT["Text"]
-
-    F_A --> F_WE --> F_LD --> F_D --> F_TXT
-  end
-
   %% =======================
-  %% Project Integration
+  %% Integration (bottom)
   %% =======================
-  subgraph INT["Integration (Project flow)"]
+  subgraph INT["Integration (Project Flow)"]
     direction LR
-    I_TXT["Text"]
-    I_AUD["Audio"]
-    I_GLM4["GLM-4"]
-    I_KIMID["Kimi Decoder"]
-    I_CT2E["CT2 Whisper Encoder"]
-    I_DET{"English / Mandarin?"}
-    I_CT2D["CT2 Whisper Decoder"]
-    I_OUT["Text"]
+    I_TXT["Text"]:::neutral
+    I_AUD["Audio"]:::neutral
+    I_GLM4["GLM-4 (from Kimi)"]:::kimi
+    I_KIMID["Kimi Decoder"]:::kimi
+    I_CT2E["CT2 Whisper Encoder"]:::fw
+    I_DET{"English / Mandarin?"}:::fw
+    I_CT2D["CT2 Whisper Decoder"]:::fw
+    I_OUT["Text"]:::neutral
 
     %% Text/Audio -> GLM-4 -> Kimi decoder -> Text
     I_TXT --> I_GLM4
@@ -67,12 +70,12 @@ flowchart LR
     I_DET -- "Other languages" --> I_CT2D --> I_OUT
   end
 
-  %% ------- Reference (dotted) lines to show which subsystems power Integration -------
-  I_CT2E -. "uses" .- F_WE
-  I_CT2D -. "uses" .- F_D
-  I_KIMID -. "uses" .- K_TK
-  I_GLM4  -. "uses" .- K_TK
-  I_KIMID -. "uses" .- K_WE
+  %% =======================
+  %% High-contrast styles
+  %% =======================
+  classDef neutral fill:#ffffff,stroke:#111827,color:#111827;   %% crisp white nodes
+  classDef kimi    fill:#e8f1ff,stroke:#1d4ed8,color:#0f172a;   %% soft blue for Kimi parts
+  classDef fw      fill:#eaffea,stroke:#16a34a,color:#0f172a;   %% soft green for CT2 parts
 ```
 
 ## 🌟 Key Features
