@@ -12,29 +12,67 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 ## 🏗️ System Architecture
 ```mermaid
 flowchart LR
-  %% Integration (GitHub-friendly)
-  subgraph Integration
+  %% =======================
+  %% Kimi (Embeddings path)
+  %% =======================
+  subgraph KIMI["Kimi (Embeddings)"]
     direction LR
-    TXT["Text"]
-    AUD["Audio"]
-    GLM4["GLM-4"]
-    KIMI["Kimi Decoder"]
-    CT2E["CT2 Whisper Encoder"]
-    DET{"Language detected?"}
-    CT2D["CT2 Whisper Decoder"]
-    OUT["Text"]
+    K_T["Text"]
+    K_A["Audio"]
+    K_TK["GLM-4 Tokenizer"]
+    K_WE["Whisper Encoder"]
+    K_E["Embedding Layer"]
 
-    %% Text / Audio -> GLM-4 -> Kimi decoder -> Text
-    TXT --> GLM4
-    AUD --> GLM4
-    GLM4 --> KIMI --> OUT
+    K_T --> K_TK --> K_E
+    K_A --> K_TK
+    K_A --> K_WE --> K_E
+  end
+
+  %% ============================
+  %% faster-whisper (CT2) system
+  %% ============================
+  subgraph FW["faster-whisper (CT2)"]
+    direction LR
+    F_A["Audio"]
+    F_WE["Whisper Encoder"]
+    F_LD{"Language Detection"}
+    F_D["Decoder"]
+    F_TXT["Text"]
+
+    F_A --> F_WE --> F_LD --> F_D --> F_TXT
+  end
+
+  %% =======================
+  %% Project Integration
+  %% =======================
+  subgraph INT["Integration (Project flow)"]
+    direction LR
+    I_TXT["Text"]
+    I_AUD["Audio"]
+    I_GLM4["GLM-4"]
+    I_KIMID["Kimi Decoder"]
+    I_CT2E["CT2 Whisper Encoder"]
+    I_DET{"English / Mandarin?"}
+    I_CT2D["CT2 Whisper Decoder"]
+    I_OUT["Text"]
+
+    %% Text/Audio -> GLM-4 -> Kimi decoder -> Text
+    I_TXT --> I_GLM4
+    I_AUD --> I_GLM4
+    I_GLM4 --> I_KIMID --> I_OUT
 
     %% Audio -> CT2 encoder -> detection -> route
-    AUD --> CT2E
-    CT2E -- "Language detection (self-handled)" --> DET
-    DET  -- "English or Mandarin" --> KIMI
-    DET  -- "Other languages"     --> CT2D --> OUT
+    I_AUD --> I_CT2E --> I_DET
+    I_DET -- "English or Mandarin" --> I_KIMID
+    I_DET -- "Other languages" --> I_CT2D --> I_OUT
   end
+
+  %% ------- Reference (dotted) lines to show which subsystems power Integration -------
+  I_CT2E -. "uses" .- F_WE
+  I_CT2D -. "uses" .- F_D
+  I_KIMID -. "uses" .- K_TK
+  I_GLM4  -. "uses" .- K_TK
+  I_KIMID -. "uses" .- K_WE
 ```
 
 ## 🌟 Key Features
