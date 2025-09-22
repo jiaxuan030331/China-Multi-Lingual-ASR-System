@@ -26,6 +26,33 @@ flowchart LR
     A  --> WE
     TK --> E
     WE --> E
+    end
+flowchart LR
+  subgraph "faster-whisper"
+    direction LR
+    A["Audio"] --> WE["Whisper Encoder"] --> LD["Language Detection"] --> D["Decoder"]
+  end
+flowchart LR
+  subgraph Integration
+    direction LR
+    TXT["Text"]
+    AUD["Audio"]
+    GLM4["GLM-4"]
+    KIMI["Kimi Decoder"]
+    CT2E["CT2 Whisper Encoder"]
+    DET{"English / Mandarin?"}
+    CT2D["CT2 Whisper Decoder"]
+    OUT["Text"]
+
+    %% Text / Audio -> GLM-4 -> Kimi decoder -> Text
+    TXT --> GLM4
+    AUD --> GLM4
+    GLM4 --> KIMI --> OUT
+
+    %% Audio -> CT2 encoder -> (self-handled) language detection
+    AUD --> CT2E -->|Language detection (self-handled)| DET
+    DET -- English/Mandarin --> KIMI
+    DET -- Others --> CT2D --> OUT
   end
 ```
 
