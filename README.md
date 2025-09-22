@@ -31,9 +31,7 @@ ASR/
 ### Architecture (Mermaid)
 ```mermaid
 flowchart LR
-  %% =======================
-  %% Kimi (Embeddings path)
-  %% =======================
+  %% ---- Kimi (Embeddings) ----
   subgraph KIMI["Kimi (Embeddings)"]
     direction LR
     K_T["Text"]:::kimi
@@ -41,15 +39,12 @@ flowchart LR
     K_TK["GLM-4 Tokenizer"]:::kimi
     K_WE["Whisper Encoder"]:::kimi
     K_E["Embedding Layer"]:::kimi
-
     K_T --> K_TK --> K_E
     K_A --> K_TK
     K_A --> K_WE --> K_E
   end
 
-  %% ============================
-  %% faster-whisper (CT2) system
-  %% ============================
+  %% ---- faster-whisper (CT2) ----
   subgraph FW["faster-whisper (CT2)"]
     direction LR
     F_A["Audio"]:::fw
@@ -57,48 +52,14 @@ flowchart LR
     F_LD{"Language Detection"}:::decision
     F_D["Decoder"]:::fw
     F_TXT["Text"]:::fw
-
     F_A --> F_WE --> F_LD --> F_D --> F_TXT
   end
 
-  %% =======================
-  %% Project Integration
-  %% =======================
-  subgraph INT["Integration (Project flow)"]
-    direction LR
-    I_TXT["Text"]:::int
-    I_AUD["Audio"]:::int
-    I_GLM4["GLM-4"]:::int
-    I_KIMID["Kimi Decoder"]:::int
-    I_CT2E["CT2 Whisper Encoder"]:::int
-    I_DET{"English / Mandarin?"}:::decision
-    I_CT2D["CT2 Whisper Decoder"]:::int
-    I_OUT["Text"]:::int
-
-    %% Text/Audio -> GLM-4 -> Kimi decoder -> Text
-    I_TXT --> I_GLM4
-    I_AUD --> I_GLM4
-    I_GLM4 --> I_KIMID --> I_OUT
-
-    %% Audio -> CT2 encoder -> detection -> route
-    I_AUD --> I_CT2E --> I_DET
-    I_DET -- "English or Mandarin" --> I_KIMID
-    I_DET -- "Other languages" --> I_CT2D --> I_OUT
-  end
-
-  %% ------- Reference (dotted) lines to show which subsystems power Integration -------
-  I_CT2E -. "uses" .- F_WE
-  I_CT2D -. "uses" .- F_D
-  I_KIMID -. "uses" .- K_TK
-  I_GLM4  -. "uses" .- K_TK
-  I_KIMID -. "uses" .- K_WE
-
-  %% --------- Styles (Contrasted Colors) ---------
   classDef kimi fill:#E6F2FF,stroke:#1E90FF,color:#0B3D91,stroke-width:1.5px;
   classDef fw fill:#FFF5E6,stroke:#FF8C00,color:#7F4F00,stroke-width:1.5px;
-  classDef int fill:#E6FFEE,stroke:#2E8B57,color:#0F5132,stroke-width:1.5px;
   classDef decision fill:#FFF0F6,stroke:#C71585,color:#5B1A42,stroke-width:1.5px;
-```
+'''
+ 
 
 ## Minimal Demo
 - Start API (default port 8001):
