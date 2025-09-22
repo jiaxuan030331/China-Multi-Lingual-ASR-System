@@ -25,12 +25,12 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 flowchart LR
   classDef default fill:#ffffff,stroke:#111111,color:#111111;
 
-  TXT[Text] --> GLM4[GLM-4 (from Kimi)] --> KDEC[Kimi Decoder] --> OUT[Text]
+  TXT[Text] --> GLM4[GLM-4 from Kimi] --> KDEC[Kimi Decoder] --> OUT[Text]
   AUD[Audio] --> GLM4
 
-  AUD --> CT2E[CT2 Whisper Encoder] --> DET{English / Mandarin?}
-  DET -- "English or Mandarin" --> KDEC
-  DET -- "Other languages" --> CT2D[CT2 Whisper Decoder] --> OUT
+  AUD --> CT2E[CT2 Whisper Encoder] --> DET{English or Mandarin}
+  DET -- English or Mandarin --> KDEC
+  DET -- Other languages --> CT2D[CT2 Whisper Decoder] --> OUT
 ```
 
 ## 🌟 Key Features
