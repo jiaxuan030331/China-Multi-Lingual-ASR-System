@@ -10,6 +10,7 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 - **Cantonese & Other Dialects**: Utilizes fine-tuned Whisper decoder, dramatically reducing error rates (Cantonese CER: 30-40% → ~15%)
 
 ## 🏗️ System Architecture
+```mermaid
 flowchart LR
   %% Kimi: multimodal to embedding
   subgraph Kimi
@@ -23,6 +24,7 @@ flowchart LR
     T --> TK --> E
     A --> WE --> E
   end
+```
 
 ## 🌟 Key Features
 
