@@ -10,32 +10,19 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 - **Cantonese & Other Dialects**: Utilizes fine-tuned Whisper decoder, dramatically reducing error rates (Cantonese CER: 30-40% → ~15%)
 
 ## 🏗️ System Architecture
+flowchart LR
+  %% Kimi: multimodal to embedding
+  subgraph Kimi
+    direction LR
+    T[Text]
+    A[Audio]
+    TK[GLM-4 Tokenizer]
+    WE[Whisper Encoder]
+    E[[Embedding Layer]]
 
-```
-┌─────────────────┐    WebSocket     ┌─────────────────────┐
-│   Client Apps   │ ◄──────────────► │   WebSocket Server  │
-└─────────────────┘                  └─────────┬───────────┘
-                                               │
-                                               ▼
-                                    ┌─────────────────────┐
-                                    │   IntegratedASR     │
-                                    │   (Core Router)     │
-                                    └─────────┬───────────┘
-                                              │
-                              ┌───────────────┼───────────────┐
-                              ▼               ▼               ▼
-                    ┌─────────────────┐ ┌─────────────┐ ┌─────────────┐
-                    │ Whisper Encoder │ │ Language ID │ │ Output      │
-                    │   (Shared)      │ │  Router     │ │ Adapter     │
-                    └─────────────────┘ └─────┬───────┘ └─────────────┘
-                                              │
-                                    ┌─────────┴─────────┐
-                                    ▼                   ▼
-                            ┌─────────────────┐ ┌─────────────────┐
-                            │   Kimi Chain    │ │ Whisper Decoder │
-                            │  (zh-CN, en)    │ │ (yue, others)   │
-                            └─────────────────┘ └─────────────────┘
-```
+    T --> TK --> E
+    A --> WE --> E
+  end
 
 ## 🌟 Key Features
 
