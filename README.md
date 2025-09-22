@@ -12,7 +12,6 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 ## 🏗️ System Architecture
 ```mermaid
 %%{init:{
-%%{init:{
   "theme":"base",
   "themeVariables":{
     "background":"#ffffff","textColor":"#111111","lineColor":"#111111",
@@ -29,12 +28,8 @@ flowchart LR
   DET -- "English or Mandarin" --> KDEC
   DET -- "Other languages" --> CT2D[CT2 Whisper Decoder] --> OUT
 
-  %% edge order (for coloring):
-  %% 0:TXT->GLM4, 1:GLM4->KDEC, 2:KDEC->OUT, 3:AUD->GLM4,
-  %% 4:AUD->CT2E, 5:CT2E->DET, 6:DET->KDEC, 7:DET->CT2D, 8:CT2D->OUT
-  linkStyle 0,1,2,3,6 stroke:#1d4ed8,stroke-width:2px,color:#111111;  %% Kimi path
-  linkStyle 4,5,7,8   stroke:#16a34a,stroke-width:2px,color:#111111;  %% CT2 path
-```
+  linkStyle 0,1,2,3,6 stroke:#1d4ed8,stroke-width:2px,color:#111111;
+  linkStyle 4,5,7,8   stroke:#16a34a,stroke-width:2px,color:#111111;
 
 ## 🌟 Key Features
 
