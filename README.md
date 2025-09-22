@@ -42,14 +42,7 @@ flowchart LR
 - **Memory Optimization**: CTranslate2 + int8 quantization reducing VRAM usage by 50%
 - **Gradual Rollout**: Seamless switching between legacy and new architectures
 
-### Language Support Matrix
 
-| Language | Engine | CER/WER | Status |
-|----------|--------|---------|---------|
-| Mandarin (zh-CN) | Kimi | ~5% | ✅ Production |
-| English (en) | Kimi | ~3% | ✅ Production |
-| Cantonese (yue) | Whisper (Fine-tuned) | ~15% | 🚧 Optimized |
-| Other Dialects | Whisper | Standard | 📈 Continuous Improvement |
 
 ### Production Features
 - **Horizontal Scaling**: Multi-process WebSocket server with load balancing
