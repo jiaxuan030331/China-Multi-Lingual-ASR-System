@@ -45,7 +45,7 @@ class Stable_Diffusion(BaseModule):
         #                   resnet_groups=16,
         #                   kernel_multiplier_downsample=2,
         #                   multipliers=[4, 4, 4, 5, 5],
-        #                   factors=[1, 2, 2, 4], # 输入长度不一致卷积缩短
+        #                   factors=[1, 2, 2, 4], # Convolution shortens when input lengths differ
         #                   num_blocks=[2, 2, 2, 2],
         #                   attentions=[1, 3, 3, 3, 3],
         #                   attention_heads=16,

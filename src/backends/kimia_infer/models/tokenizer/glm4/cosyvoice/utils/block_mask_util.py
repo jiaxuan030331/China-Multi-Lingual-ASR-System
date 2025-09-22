@@ -4,10 +4,10 @@ import torch
 def create_grid_mask(seq_length, trunck_length, fill_triangle):
     assert seq_length > 0
 
-    # 先不考虑seen_length创建一个grid mask：
+    # Create a grid mask without considering seen_length for now:
     if fill_triangle:
         mask = 1 - torch.triu(torch.ones(seq_length, seq_length), diagonal=1)
-        # 下三角与主对角线都为1
+        # Lower triangle and main diagonal are 1s
     else:
         mask = torch.zeros(seq_length, seq_length)
 

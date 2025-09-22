@@ -10,18 +10,18 @@ _model_config = {}
 def load_integrated_asr(
     ct2_model_path: str = 'large-v3',
     kimi_model_path_or_name: str = "moonshotai/Kimi-Audio-7B-Instruct", 
-    lid_model_path: str = "/workspace/ASR/WhisperLive/language_fnn_only2.pt",
+    lid_model_path: str = "/workspace/ASR/models/lid/language_fnn_only2.pt",
     confidence_threshold: float = 0.7
 ):
     """
-    加载或复用一个 IntegratedASR 模型实例，支持可配置参数。
-    若参数与已有模型不一致，会抛出错误防止重复加载。
+    Load or reuse a single IntegratedASR model instance with configurable parameters.
+    If parameters differ from the existing instance, raise an error to prevent reloading.
     
-    参数:
-    - ct2_model_path: CTranslate2 Whisper模型路径
-    - kimi_model_path_or_name: Kimi模型路径或名称
-    - lid_model_path: 语言识别FNN模型路径  
-    - confidence_threshold: 语言置信度阈值，决定是否使用Kimi
+    Args:
+    - ct2_model_path: path or name of the CTranslate2 Whisper model
+    - kimi_model_path_or_name: path or name of the Kimi model
+    - lid_model_path: path to language identification FNN model
+    - confidence_threshold: language confidence threshold to route to Kimi
     """
     global _model_instance, _model_config
 
@@ -38,20 +38,20 @@ def load_integrated_asr(
             _model_config = requested_config
         elif _model_config != requested_config:
             raise RuntimeError(
-                f"IntegratedASR 模型已加载，参数不一致。\n当前: {_model_config}\n请求: {requested_config}"
+                f"IntegratedASR already loaded with different parameters.\nCurrent: {_model_config}\nRequested: {requested_config}"
             )
 
     return _model_instance
 
 def get_model_instance():
-    """获取当前模型实例，如果未加载则使用默认参数加载"""
+    """Get the current model instance; load with default params if not loaded."""
     global _model_instance
     if _model_instance is None:
         return load_integrated_asr()
     return _model_instance
 
 def close_model():
-    """关闭模型并清理资源"""
+    """Close the model and release resources."""
     global _model_instance, _model_config
     with model_lock:
         if _model_instance is not None:

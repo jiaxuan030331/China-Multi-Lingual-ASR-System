@@ -7,10 +7,10 @@ from loguru import logger
 from transformers import AutoTokenizer
 
 
-from kimi_deployment.kimia_infer.models.tokenizer.whisper_Lv3.whisper import WhisperEncoder
-from kimi_deployment.kimia_infer.models.tokenizer.glm4_tokenizer import Glm4Tokenizer
-from kimi_deployment.kimia_infer.utils.data import KimiAContent
-from kimi_deployment.kimia_infer.utils.special_tokens import instantiate_extra_tokens
+from src.backends.kimia_infer.models.tokenizer.whisper_Lv3.whisper import WhisperEncoder
+from src.backends.kimia_infer.models.tokenizer.glm4_tokenizer import Glm4Tokenizer
+from src.backends.kimia_infer.utils.data import KimiAContent
+from src.backends.kimia_infer.utils.special_tokens import instantiate_extra_tokens
 
 class KimiAPromptManager:
     def __init__(self, model_path: str, kimia_token_offset: int):

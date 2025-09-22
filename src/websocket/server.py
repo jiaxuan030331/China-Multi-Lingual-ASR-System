@@ -33,21 +33,21 @@ class ClientManager:
     def get_http_url(self):
         cf = configparser.ConfigParser()
         path = "./src/websocket/conf/config.ini"
-        print(f"[DEBUG] 读取配置文件路径: {os.path.abspath(path)}")
+        print(f"[DEBUG] Config path: {os.path.abspath(path)}")
         cf.read(path)
 
         if not cf.has_section("model"):
-            raise ValueError(f"[ERROR] 配置文件中缺少 [model] 段: {os.path.abspath(path)}")
+            raise ValueError(f"[ERROR] Missing [model] section in config: {os.path.abspath(path)}")
         if not cf.has_option("model", "http_url"):
-            raise ValueError(f"[ERROR] [model] 段缺少 http_url 选项: {os.path.abspath(path)}")
+            raise ValueError(f"[ERROR] Missing http_url in [model] section: {os.path.abspath(path)}")
 
         http_urls = cf.get("model", "http_url")
-        print(f"[DEBUG] 原始 http_url 内容: {http_urls}")
+        print(f"[DEBUG] Raw http_url value: {http_urls}")
 
         http_urls = http_urls.split(',')
         http_url = http_urls[self.model_idx % len(http_urls)]
         self.model_idx += 1
-        print(f"[DEBUG] 使用的 http_url: {http_url}")
+        print(f"[DEBUG] Using http_url: {http_url}")
         return http_url
 
     def add_client(self, websocket, client):
@@ -202,7 +202,7 @@ class TranscriptionServer:
             return False, None
         try:
             raw_data = np.frombuffer(buffer=frame_data, dtype=np.int16)
-            #logging.info(f"✅ 接收音频帧大小: {len(frame_data)} 字节, 采样点: {raw_data.shape[0]}")
+            # logging.info(f"✅ Received audio frame size: {len(frame_data)} bytes, samples: {raw_data.shape[0]}")
             raw_data = raw_data.astype(np.float32) / 32768.0
         except Exception as e:
             logging.error(f"Error get_audio_bytes_from_websocket: {str(e)}")
@@ -222,8 +222,8 @@ class TranscriptionServer:
         websocket.send(response)
     def check_token(self, token, uid):
         if self.modelService is None:
-        # 无数据库时直接返回成功
-            print(f"[临时绕过] Token检查被跳过: {token}")
+        # No database available: return success directly
+            print(f"[TEMP BYPASS] Token check bypassed: {token}")
             return {"uid": uid, "code": StatusCode.Success, "status": StatusCode.STATUS_SUCCESS,
                     "message": "token check bypassed"}, "default_user"
         token_result, user_type = self.modelService.check_token(token)
@@ -284,7 +284,7 @@ class TranscriptionServer:
                 self.send_message(websocket, json.dumps(response))
                 return False
 
-            # ✅ MOCK 掉 token 校验逻辑
+            # ✅ Mock out token verification logic
             user_type = {
                 'user_id': 'debug_user',
                 'type_name': 'developer',
@@ -492,7 +492,7 @@ class ServeClientBase(object):
         print('add_frames ----- length ' + str(len(self.frames_np)))
         self.lock.release()
 
-    # 去掉过多的静音
+    # Remove excessive silence
     def clip_audio_if_no_valid_segment(self):
         if self.frames_np[int((self.timestamp_offset - self.frames_offset) * self.RATE):].shape[0] > 60 * self.RATE:
             duration = self.frames_np.shape[0] / self.RATE
@@ -716,7 +716,7 @@ class ServeClientFasterWhisper(ServeClientBase):
 
         if len(segments) or is_end:
             # segments.append(new_result)
-            # 去重：和上次一致则不发送（除非 is_end=True）
+            # De-duplicate: if same as last time, do not send (unless is_end=True)
             import json as _json
             _cur = _json.dumps(segments, ensure_ascii=False)
             _prev = getattr(self, "_prev_segments_json", None)

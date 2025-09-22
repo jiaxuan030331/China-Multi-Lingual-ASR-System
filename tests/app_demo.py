@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""
-最简化的IntegratedASR应用层测试
-"""
+
+import sys
+import os
+# Add project root to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 
 # 导入封装层
 from src.app import load_integrated_asr, transcribe_auto

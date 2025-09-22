@@ -639,7 +639,7 @@ class TransformerBlock(nn.Module):
             zero_init_output=zero_init_branch_outputs,
             **attn_kwargs
         )
-        ### 2. 主要是这边需要修改
+        ### 2. TODO: main modifications needed here
         if cross_attend:
             self.cross_attend_norm = LayerNorm(dim, **norm_kwargs) if not remove_norms else nn.Identity()
             self.cross_attn = Attention(

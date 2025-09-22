@@ -59,7 +59,7 @@ class DiffusionTransformerV2(nn.Module):
         timestep_embed = self.to_timestep_embed(self.timestep_features(t[:, None]))  # (b, embed_dim)
         cated_input = torch.cat([t,mu,x_t])
 
-        ### 1. 需要重新写过以适应不同长度的con
+        ### 1. TODO: rewrite to adapt to variable-length conditioning
         if cross_attn_cond is not None:
             cross_attn_cond = self.to_cond_embed(cross_attn_cond)
 

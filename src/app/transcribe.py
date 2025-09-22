@@ -4,7 +4,7 @@ import soundfile as sf
 import numpy as np
 import io
 from pydub import AudioSegment
-from src.app.load_model import model_lock  # 线程锁，保证模型线程安全
+from src.app.load_model import model_lock  # Thread lock to ensure model thread-safety
 from typing import Union
 import os
 import librosa
@@ -15,44 +15,44 @@ logger = logging.getLogger(__name__)
 
 def load_audio_safe(audio_path: str, sr: int = 16000) -> np.ndarray:
     """
-    安全加载音频文件为16kHz单声道float32格式，支持MP3/WAV等多种格式
+    Safely load an audio file as 16kHz mono float32, supporting MP3/WAV and more
     
-    参数:
-    - audio_path: 音频文件路径
-    - sr: 目标采样率，默认16000Hz
+    Args:
+    - audio_path: path to the audio file
+    - sr: target sample rate, default 16000Hz
     
-    返回:
-    - np.ndarray: 单声道float32音频数组
+    Returns:
+    - np.ndarray: mono float32 audio array
     """
     try:
-        # 优先使用librosa，支持MP3等格式
+        # Prefer librosa, which supports MP3 and more formats
         audio, sr = librosa.load(audio_path, sr=sr, mono=True)
         return audio, sr
     except Exception as e:
-        logger.warning(f"[Audio] librosa加载失败，尝试备用方案: {e}")
+        logger.warning(f"[Audio] librosa failed, trying fallback: {e}")
         
-        # 备用方案：soundfile + pydub
+        # Fallback: soundfile + pydub
         try:
             with open(audio_path, 'rb') as f:
                 audio_bytes = f.read()
             return load_waveform_from_bytes(audio_bytes, preferred_sr=sr)
         except Exception as e2:
-            logger.error(f"[Audio] 所有加载方案失败: {e2}")
-            raise RuntimeError(f"音频文件加载失败: {audio_path}")
+            logger.error(f"[Audio] All loaders failed: {e2}")
+            raise RuntimeError(f"Failed to load audio file: {audio_path}")
 
 def load_waveform_from_bytes(audio_bytes: bytes, preferred_sr=16000) -> np.ndarray:
-    """将上传的音频字节流转换为 float32 waveform，支持多种格式。"""
+    """Convert uploaded audio bytes into a float32 waveform; supports multiple formats."""
     try:
         with io.BytesIO(audio_bytes) as f:
             waveform, sr = sf.read(f)
         if waveform.ndim > 1:
-            waveform = waveform.mean(axis=1)  # 转单声道
+            waveform = waveform.mean(axis=1)  # to mono
         if sr != preferred_sr:
             waveform = librosa.resample(waveform, orig_sr=sr, target_sr=preferred_sr)
-        logger.info("[Audio] soundfile 读取成功")
+        logger.info("[Audio] soundfile read succeeded")
         return waveform.astype(np.float32)
     except Exception:
-        logger.warning("[Audio] soundfile 失败，尝试 pydub 解码")
+        logger.warning("[Audio] soundfile failed, trying pydub decode")
 
     # fallback to pydub
     try:
@@ -66,43 +66,43 @@ def load_waveform_from_bytes(audio_bytes: bytes, preferred_sr=16000) -> np.ndarr
         waveform, sr = librosa.load(pcm, sr=None)
         if sr != preferred_sr:
             waveform = librosa.resample(waveform, orig_sr=sr, target_sr=preferred_sr)
-        logger.info("[Audio] pydub 读取成功")
+        logger.info("[Audio] pydub read succeeded")
         return waveform.astype(np.float32)
     except Exception as e:
-        logger.error(f"[Audio] 解码失败: {e}")
-        raise RuntimeError(f"音频解码失败: {e}")
+        logger.error(f"[Audio] Decode failed: {e}")
+        raise RuntimeError(f"Audio decode failed: {e}")
 
 def normalize_audio_input(audio_input) -> np.ndarray:
     """
-    标准化音频输入为np.ndarray格式
+    Normalize audio input to np.ndarray
     
-    参数:
-    - audio_input: torch.Tensor, np.ndarray, list等
+    Args:
+    - audio_input: torch.Tensor, np.ndarray, list, etc.
     
-    返回:
-    - np.ndarray: 标准化后的音频数组
+    Returns:
+    - np.ndarray: normalized audio array
     """
     if isinstance(audio_input, torch.Tensor):
-        # 处理torch.Tensor
+        # Handle torch.Tensor
         if audio_input.ndim == 2 and audio_input.shape[0] > 1:
-            # 立体声转单声道
+            # stereo to mono
             audio_input = audio_input.mean(dim=0)
         elif audio_input.ndim == 2:
-            # 单声道但有额外维度
+            # mono with extra dimension
             audio_input = audio_input.squeeze(0)
         audio_np = audio_input.detach().cpu().numpy()
     elif isinstance(audio_input, np.ndarray):
         audio_np = audio_input.copy()
         if audio_np.ndim == 2:
-            # 立体声转单声道
+            # stereo to mono
             audio_np = audio_np.mean(axis=0) if audio_np.shape[0] <= audio_np.shape[1] else audio_np.mean(axis=1)
     else:
-        # 其他类型转numpy
+        # other types to numpy
         audio_np = np.asarray(audio_input)
         if audio_np.ndim > 1:
             audio_np = audio_np.flatten()
     
-    # 清理异常值并转float32
+    # clean invalid values and cast to float32
     audio_np = np.nan_to_num(audio_np, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
     return audio_np
 
@@ -114,21 +114,21 @@ def transcribe_from_waveform(
     ct2_only: bool = False
 ) -> dict:
     """
-    使用 IntegratedASR 模型进行音频转写。
+    Transcribe audio with the IntegratedASR model.
     
-    参数:
-    - model: IntegratedASR实例
-    - waveform: 音频波形数据 (numpy/torch)
-    - prep_timeout: 准备阶段超时时间
+    Args:
+    - model: IntegratedASR instance
+    - waveform: audio waveform (numpy/torch)
+    - prep_timeout: preparation timeout
     
-    返回:
-    - dict: 包含转写结果的字典
+    Returns:
+    - dict: transcription result dict
     """
     try:
-        # 标准化音频输入
+        # Normalize audio input
         audio_np = normalize_audio_input(waveform)
         
-        # 使用线程锁确保线程安全
+        # Ensure thread safety with lock
         with model_lock:
             result = model.transcribe(
                 audio=audio_np, 
@@ -147,7 +147,7 @@ def transcribe_from_waveform(
         }
         
     except Exception as e:
-        logger.exception("IntegratedASR 推理失败")
+        logger.exception("IntegratedASR inference failed")
         return {
             "status": -1,
             "error": str(e)
@@ -161,26 +161,25 @@ def transcribe_from_path(
     ct2_only: bool = False
 ) -> dict:
     """
-    从文件路径进行音频转写
+    Transcribe audio from a file path
     
-    参数:
-    - model: IntegratedASR实例
-    - audio_path: 音频文件路径
-    - prep_timeout: 准备阶段超时时间
-   
+    Args:
+    - model: IntegratedASR instance
+    - audio_path: path to audio file
+    - prep_timeout: preparation timeout
     
-    返回:
-    - dict: 包含转写结果的字典
+    Returns:
+    - dict: transcription result dict
     """
     try:
-        # 安全加载音频
+        # Safely load audio
         audio = load_audio_safe(audio_path)
         
-        # 获取文件信息
+        # File info
         duration = librosa.get_duration(path=audio_path)
         file_name = os.path.basename(audio_path)
         
-        # 转写
+        # Transcribe
         with model_lock:
             result = model.transcribe(
                 audio=audio,
@@ -203,7 +202,7 @@ def transcribe_from_path(
         }
         
     except Exception as e:
-        logger.exception("IntegratedASR 路径转写失败")
+        logger.exception("IntegratedASR path transcription failed")
         return {
             "status": -1,
             "error": str(e),
@@ -218,25 +217,24 @@ def transcribe_from_bytes(
     ct2_only: bool = False
 ) -> dict:
     """
-    从音频字节流进行转写
+    Transcribe from audio bytes
     
-    参数:
-    - model: IntegratedASR实例  
-    - audio_bytes: 音频字节数据
-    - prep_timeout: 准备阶段超时时间
+    Args:
+    - model: IntegratedASR instance  
+    - audio_bytes: audio bytes
+    - prep_timeout: preparation timeout
     
-    
-    返回:
-    - dict: 包含转写结果的字典
+    Returns:
+    - dict: transcription result dict
     """
     try:
-        # 解码音频字节流
+        # Decode audio bytes
         waveform = load_waveform_from_bytes(audio_bytes)
         
-        # 计算时长
+        # Duration
         duration = librosa.get_duration(y=waveform, sr=16000)
         
-        # 转写
+        # Transcribe
         with model_lock:
             result = model.transcribe(
                 audio=waveform,
@@ -258,7 +256,7 @@ def transcribe_from_bytes(
         }
         
     except Exception as e:
-        logger.exception("[ASR] 字节流转写失败")
+        logger.exception("[ASR] Byte-stream transcription failed")
         return {
             "status": -1,
             "error": str(e)
@@ -272,20 +270,19 @@ def transcribe_auto(
     ct2_only: bool = False
 ) -> dict:
     """
-    自动识别音频格式并调用对应的转写流程。
-    支持输入类型: 路径、bytes、numpy、Tensor
+    Automatically detect audio input type and call the appropriate path.
+    Supported types: path, bytes, numpy, torch.Tensor
     
-    参数:
-    - model: IntegratedASR实例
-    - audio: 音频输入（多种格式）
-    - prep_timeout: 准备阶段超时时间
-   
+    Args:
+    - model: IntegratedASR instance
+    - audio: audio input (various types)
+    - prep_timeout: preparation timeout
     
-    返回:
-    - dict: 转写结果字典
+    Returns:
+    - dict: transcription result
     """
     
-    # Case 1: 文件路径
+    # Case 1: file path
     if isinstance(audio, (str, Path)):
         return transcribe_from_path(
             model=model,
@@ -295,7 +292,7 @@ def transcribe_auto(
             ct2_only=ct2_only
         )
 
-    # Case 2: 字节流（如 HTTP API 中接收的）
+    # Case 2: bytes (e.g., received in HTTP API)
     elif isinstance(audio, bytes):
         return transcribe_from_bytes(
             model=model,
@@ -305,7 +302,7 @@ def transcribe_auto(
             ct2_only=ct2_only
         )
 
-    # Case 3: numpy 或 torch waveform
+    # Case 3: numpy or torch waveform
     elif isinstance(audio, (np.ndarray, torch.Tensor)):
         return transcribe_from_waveform(
             model=model,
@@ -318,7 +315,8 @@ def transcribe_auto(
     else:
         raise TypeError(f"[transcribe_auto] Unsupported audio input type: {type(audio)}")
 
-# 便捷函数：直接文本输出
+# Convenience: return text directly
+
 def transcribe_text(
     model,
     audio: Union[str, Path, bytes, np.ndarray, torch.Tensor],
@@ -327,13 +325,13 @@ def transcribe_text(
     ct2_only: bool = False
 ) -> str:
     """
-    转写音频并直接返回文本（简化版）
+    Transcribe audio and return text directly (simplified)
     
-    返回:
-    - str: 转写文本，失败时返回错误信息
+    Returns:
+    - str: transcribed text, or error message on failure
     """
     result = transcribe_auto(model, audio, prep_timeout, kimi_only, ct2_only)
     if result["status"] == 0:
         return result["text"]
     else:
-        return f"[转写失败] {result.get('error', 'Unknown error')}" 
+        return f"[Transcription failed] {result.get('error', 'Unknown error')}" 

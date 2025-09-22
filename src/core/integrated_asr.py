@@ -1,10 +1,10 @@
 """
-Simple Integrated ASR: 并行准备阶段，FNN决策后单链解码
+Simple Integrated ASR: parallel preparation phase, single-chain decode after FNN routing
 
-核心逻辑：
-1. 并行启动 CT2链(encode+LID) 和 Kimi链(tokenize)
-2. 等FNN出结果：zh/en→继续Kimi，其他→继续CT2
-3. 单链解码，另一链停止
+Core flow:
+1. Launch CT2 chain (encode + LID) and Kimi chain (tokenize) in parallel
+2. Wait FNN result: zh/en → continue Kimi, otherwise → continue CT2
+3. Decode only one chain, stop the other
 """
 
 import torch
@@ -13,28 +13,28 @@ import numpy as np
 import time
 import os
 import torchaudio
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 import threading
 from dataclasses import dataclass
 from typing import Optional, Tuple
-from WhisperLive.whisper_live.new_transcriber import TranscriptionOptions
 from faster_whisper.tokenizer import Tokenizer as FWTokenizer
 
-# 设置HuggingFace缓存到workspace目录
+# Modified backend code from faster_whisper and  Kimi_Audio
+from src.backends.faster_whisper_transcriber import TranscriptionOptions, WhisperModel
+from src.backends.kimia_infer.api.kimia import KimiAudio
+# Set Hugging Face cache under workspace directory
 os.environ['HF_HOME'] = '/workspace/.cache/huggingface'
 os.environ['TRANSFORMERS_CACHE'] = '/workspace/.cache/huggingface/transformers'
 os.environ['HF_DATASETS_CACHE'] = '/workspace/.cache/huggingface/datasets'
 
-# 确保目录存在
+# Ensure directories exist
 os.makedirs('/workspace/.cache/huggingface/hub', exist_ok=True)
 os.makedirs('/workspace/.cache/huggingface/transformers', exist_ok=True)
 os.makedirs('/workspace/.cache/huggingface/datasets', exist_ok=True)
 
-# 导入实际实现
-from kimi_deployment.kimia_infer.api.kimia import KimiAudio
-from WhisperLive.whisper_live.new_transcriber import WhisperModel
-from kimi_deployment.kimia_infer.models.tokenizer.glm4_tokenizer import Glm4Tokenizer
-from kimi_deployment.app.load_model import load_kimi_model
+# Actual implementations imported
+#
+
 
 @dataclass
 class PrepareResult:
@@ -43,14 +43,13 @@ class PrepareResult:
     speech_tokens: Optional[torch.Tensor] = None
     language: Optional[str] = None
     confidence: Optional[float] = None
-    speech_tokens: Optional[torch.Tensor] = None
     text_tokens: Optional[torch.Tensor] = None
   
 
 
 @dataclass
 class TranscribeResult:
-    """转写结果"""
+    """Transcription result"""
     text: str
     language: str
     confidence: float
@@ -61,10 +60,10 @@ class TranscribeResult:
 
 
 class CT2Chain:
-    """CTranslate2链：编码+语言检测"""
+    """CTranslate2 chain: encode + language identification"""
         
     def __init__(self, whisper_model_path: str = "large-v3", lid_model_path: str = None):
-        """初始化CT2模型"""
+        """Initialize CT2 model"""
         
         self.whisper_model = WhisperModel(
                 model_size_or_path=whisper_model_path,
@@ -82,7 +81,7 @@ class CT2Chain:
     def prepare(self, audio: np.ndarray, sr: int = 16000) -> PrepareResult:
 
 
-        # 1) 统一成 1D float32 NumPy（强制单声道）
+        # 1) Normalize to 1D float32 NumPy (force mono)
         if torch is not None and isinstance(audio, torch.Tensor):
             if audio.ndim == 2 and audio.shape[0] > 1:
                 audio = audio.mean(dim=0)          # [C,T] -> mono
@@ -95,7 +94,7 @@ class CT2Chain:
                 audio_np = audio_np.mean(axis=0) if audio_np.shape[0] <= audio_np.shape[1] else audio_np.mean(axis=1)
         audio_np = audio_np.astype(np.float32, copy=False)
 
-        # 2) 可选重采样到16k
+        # 2) Optional resample to 16kHz
         if sr != 16000:
             if torchaudio is not None and torch is not None:
                 wf = torch.from_numpy(audio_np)
@@ -104,7 +103,7 @@ class CT2Chain:
             else:
                 raise ValueError("Audio sample rate != 16000. Please resample to 16kHz before calling prepare().")
 
-        # 3) CT2编码 + 语言检测
+        # 3) CT2 encode + language detection
         audio_features = self.whisper_model.feature_extractor(audio_np)   # expects 1D float32
         encoder_output = self.whisper_model.encode(audio_features)
         
@@ -117,12 +116,12 @@ class CT2Chain:
         confidence=confidence)
         
     def decode(self, encoder_output, language: str) -> str:
-        """解码阶段"""
+        """Decode stage"""
         if self.stop_flag.is_set():
             return ""
         try:    
 
-            # 语言规范化：<|yue|> -> yue
+            # Language normalization: <|yue|> -> yue
             lang_map = {"<|zh|>": "zh", "<|en|>": "en", "<|yue|>": "yue"}
             lang = lang_map.get(language, language)
             if lang not in ("zh", "en", "yue"):
@@ -155,7 +154,7 @@ class CT2Chain:
                 hallucination_silence_threshold=None,
             )
 
-            # 关键：构造 faster_whisper 的 Tokenizer
+            # Key: construct faster_whisper Tokenizer
             tokenizer = FWTokenizer(
                 self.whisper_model.hf_tokenizer,
                 self.whisper_model.model.is_multilingual,
@@ -163,7 +162,7 @@ class CT2Chain:
                 language=lang,
             )
 
-            # 使用 transcribe 中提前塞入的 features
+            # Use features pre-injected into transcribe
             features = getattr(self.whisper_model.feature_extractor, "audio")
             segments = list(self.whisper_model.generate_segments(
                 features=features,
@@ -177,12 +176,12 @@ class CT2Chain:
             return ""
     
     def stop(self):
-        """停止信号"""
+        """Stop signal"""
         self.stop_flag.set()
 
 
 class KimiChain:
-    """Kimi链：GLM4 tokenizer + Kimi LLM"""
+    """Kimi chain: GLM4 tokenizer + Kimi LLM"""
     
     def __init__(self, kimi_model_path_or_name: str ):#load glm4 tokenizer with kimi_audio class by default
         self.kimi_model_path = kimi_model_path_or_name
@@ -190,7 +189,7 @@ class KimiChain:
                     model_path_or_name=kimi_model_path_or_name,
                     device="cuda",
                     torch_dtype="bfloat16",
-                    load_detokenizer=False  # 节省显存
+                    load_detokenizer=False  # save VRAM
                 )
         
         
@@ -198,7 +197,7 @@ class KimiChain:
         self.stop_flag = threading.Event()
     
     def prepare(self, audio: np.ndarray,sr:int = 16000) -> PrepareResult:
-        """准备阶段：双编码器结构 - Whisper连续特征 + GLM4离散token"""
+        """Preparation: dual-encoder - Whisper continuous features + GLM4 discrete tokens"""
         if sr != 16000:
             audio = torchaudio.functional.resample(audio, sr, 16000)
         if isinstance(audio, torch.Tensor):
@@ -219,7 +218,7 @@ class KimiChain:
        
     
     def decode(self, speech_tokens, text_tokens, waveform):
-        """解码阶段"""
+        """Decode stage"""
         if self.stop_flag.is_set():
             return ""
         
@@ -238,12 +237,12 @@ class KimiChain:
         return text
 
     def stop(self):
-        """停止信号"""
+        """Stop signal"""
         self.stop_flag.set()
 
 
 class IntegratedASR:
-    """集成ASR系统：并行准备，FNN决策，单链解码"""
+    """Integrated ASR: parallel preparation, FNN routing, single-chain decoding"""
     
     def __init__(
         self,
@@ -267,7 +266,7 @@ class IntegratedASR:
 
     
     def transcribe(self, audio: np.ndarray, sr:int = 16000, prep_timeout=60,kimi_only:bool = False,ct2_only:bool = False) -> TranscribeResult:
-        """主转写接口""" 
+        """Main transcription entry point""" 
         language = None
         confidence = None
         use_kimi = 'undecided'
@@ -280,7 +279,7 @@ class IntegratedASR:
             kimi_only = False
             use_kimi = False
             
-        # 容错：若未初始化则就地标记；确保线程池=2并发
+        # Fault tolerance: init on-the-fly if not initialized; ensure ThreadPool max_workers=2
         if not hasattr(self, "executor") or getattr(self.executor, "_max_workers", 0) < 2:
             try:
                 self.executor.shutdown(wait=False, cancel_futures=True)

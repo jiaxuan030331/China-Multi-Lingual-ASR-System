@@ -13,33 +13,33 @@ from fastapi import Form
 
 app = FastAPI(title="IntegratedASR API")
 
-# 提前注入启动参数
+# Pre-inject startup parameters
 app.state.ct2_model_path = os.environ.get("CT2_MODEL_PATH", "large-v3")
 app.state.kimi_model_path = os.environ.get("KIMI_MODEL_PATH", "moonshotai/Kimi-Audio-7B-Instruct")
-app.state.lid_model_path = os.environ.get("LID_MODEL_PATH", "/workspace/ASR/WhisperLive/language_fnn_only2.pt")
+app.state.lid_model_path = os.environ.get("LID_MODEL_PATH", "/workspace/ASR/models/lid/language_fnn_only2.pt")
 app.state.confidence_threshold = float(os.environ.get("CONFIDENCE_THRESHOLD", "0.7"))
-# AUTO_WARMUP=true 启动时自动预热，false 则需手动调用 /warmup
+# AUTO_WARMUP=true auto warmup on startup; false requires manual /warmup
 
 async def warmup_model():
     """
-    模型预热：使用短音频进行几次推理，预加载GPU内核和缓存
+    Model warmup: run a few short audio inferences to preload GPU kernels & caches
     """
    
     
-    print("🔥 开始模型预热...")
+    print("Starting model warmup...")
     
     try:
-        # 创建短音频进行预热 (1秒, 2秒, 3秒)
+        # Create short audios for warmup (1s, 2s, 3s)
         warmup_audios = [
-            np.random.randn(16000).astype(np.float32) * 0.01,      # 1秒
-            np.random.randn(16000 * 2).astype(np.float32) * 0.01,  # 2秒
-            np.random.randn(16000 * 3).astype(np.float32) * 0.01,  # 3秒
+            np.random.randn(16000).astype(np.float32) * 0.01,      # 1 second
+            np.random.randn(16000 * 2).astype(np.float32) * 0.01,  # 2 seconds
+            np.random.randn(16000 * 3).astype(np.float32) * 0.01,  # 3 seconds
         ]
         
         for i, audio in enumerate(warmup_audios, 1):
             
             
-            # 执行一次完整的转写流程
+            # Run a full transcription pipeline once
             result = await run_in_threadpool(
                 transcribe_from_waveform,
                 model=model,
@@ -56,19 +56,19 @@ async def warmup_model():
             )
             
             if result["status"] == 0:
-                print(f"   预热完成，引擎: {result.get('engine', 'unknown')}")
+                print(f"   Warmup completed, engine: {result.get('engine', 'unknown')}")
             else:
-                print(f"   ⚠️ 预热警告: {result.get('error', 'unknown')}")
+                print(f"   ⚠️ Warmup warning: {result.get('error', 'unknown')}")
         
-        print("🔥 模型预热完成！")
+        print("Model warmup done!")
         
     except Exception as e:
-        print(f"⚠️ 预热过程出错: {e}")
+        print(f"⚠️ Warmup error: {e}")
 
 @app.on_event("startup")
 async def startup_event():
     """
-    FastAPI 启动时加载 IntegratedASR 模型，使用 app.state 中注入的启动配置。
+    Load IntegratedASR model at FastAPI startup using injected app.state configuration.
     """
     global model
 
@@ -77,43 +77,43 @@ async def startup_event():
     lid_model_path = app.state.lid_model_path
     confidence_threshold = app.state.confidence_threshold
 
-    # 加载模型
-    print("📥 加载 IntegratedASR 模型...")
+    # Load model
+    print("📥 Loading IntegratedASR model...")
     model = load_integrated_asr(
         ct2_model_path=ct2_model_path,
         kimi_model_path_or_name=kimi_model_path,
         lid_model_path=lid_model_path,
         confidence_threshold=confidence_threshold
     )
-    print("✅ 模型加载完成")
+    print("✅ Model loaded")
     
-    # 自动预热（可通过环境变量控制）
+    # Auto warmup (controllable via env)
     auto_warmup = os.environ.get("AUTO_WARMUP", "true").lower() == "true"
     if auto_warmup:
         await warmup_model()
     else:
-        print("⚠️ 自动预热已禁用，可调用 /warmup 手动预热")
+        print("⚠️ Auto warmup disabled, call /warmup to warm manually")
 
 @app.post("/transcribe")
 async def transcribe_audio(
     file: UploadFile = File(...),
-    prep_timeout: Optional[int] = Form(60),           # 准备阶段超时
+    prep_timeout: Optional[int] = Form(60),           # Preparation timeout
 ):
     """
-    通用音频转写接口
-    支持多种音频格式(MP3/WAV等)，自动路由到最适合的引擎
+    General audio transcription endpoint
+    Supports multiple formats (MP3/WAV, etc.) and routes to the best engine automatically
     
-    参数:
-    - file: 上传的音频文件
-    - prep_timeout: 准备阶段超时时间(秒)
+    Args:
+    - file: uploaded audio file
+    - prep_timeout: preparation timeout (seconds)
     
-    返回:
-    - JSON格式的转写结果
+    Returns:
+    - JSON transcription result
     """
     try:
         contents = await file.read()
         
-        # 将模型推理部分放入线程池中执行，防止阻塞事件循环
+        # Run inference in threadpool to avoid blocking event loop
         result = await run_in_threadpool(
             transcribe_auto,
             model=model,
@@ -131,20 +131,14 @@ async def transcribe_audio(
 @app.post("/transcribe_websocket")
 async def transcribe_pcm(request: Request):
     """
-    WebSocket/流式音频转写接口
-    接收原始PCM音频数据进行实时转写
-    格式完全匹配 kimi_deployment 的返回结构
+    WebSocket/streaming audio transcription endpoint
+    Accepts raw PCM frames for real-time transcription
+    Response format fully matches kimi_deployment
     
     Headers:
-    - prep_timeout: 准备阶段超时时间(可选)
-    - language: 语言提示(可选)
-    - prompt: 转写提示(可选)
-    
-    Body:
-    - 原始PCM音频数据 (float32格式)
-    
-    返回:
-    - 兼容WebSocket格式的JSON结果，与kimi_deployment完全一致
+    - prep_timeout: preparation timeout (optional)
+    - language: language hint (optional)
+    - engine: force engine (optional)
     """
     try:
         audio_bytes = await request.body()
@@ -178,7 +172,7 @@ async def transcribe_pcm(request: Request):
             
             # 构建兼容WebSocket的返回格式 - 完全匹配kimi_deployment
             return JSONResponse(content={
-                "result": [segment['text']],  # 只包含segment信息，text在segment中
+                "result": [segment],  # 只包含segment信息，text在segment中
                 "info": {
                     "language": result.get("language", "unknown"),
                     "language_probability": result.get("confidence", 0.0),  # 关键：添加language_probability

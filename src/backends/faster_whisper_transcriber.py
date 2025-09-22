@@ -97,7 +97,7 @@ class WhisperModel:
         num_workers: int = 1,
         download_root: Optional[str] = None,
         local_files_only: bool = False,
-        language_classifier_path: str = None,  #新增一行: 是否使用自定义语言分类器
+        language_classifier_path: str = None,  # Added: path to optional custom language classifier
     ):
         #print('called')
         
@@ -130,7 +130,7 @@ class WhisperModel:
         
         self.logger = get_logger()
         
-        ###132 - 154行 新增可选加载自定义语言识别
+        # Lines 132-154: Optionally load a custom language classifier if provided
         self.language_classifier = None
         if language_classifier_path:
             
@@ -148,7 +148,7 @@ class WhisperModel:
                 torch.load(language_classifier_path, map_location=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
             )
 
-            self.language_classifier.eval()  # 推理时关闭 dropout
+            self.language_classifier.eval()  # Disable dropout during inference
             self.id2lang = {0: "zh", 1: "en", 2: "yue"}
             self.id2lang_token = {0: "<|zh|>", 1: "<|en|>", 2: "<|yue|>"}
             print("✅ With custom language predictor loaded")
@@ -257,7 +257,7 @@ class WhisperModel:
             chunk_length: Optional[int] = None,
             clip_timestamps: Union[str, List[float]] = "0",
             hallucination_silence_threshold: Optional[float] = None,
-            use_custom_language_classifier = False,#新增，控制是否使用自定义识别
+            use_custom_language_classifier = False,  # Added: toggle to use custom language classifier
         ) -> Tuple[Iterable[Segment], TranscriptionInfo]:
             
             """Transcribes an input file.
@@ -402,7 +402,7 @@ class WhisperModel:
 
                     
 
-                    ###新增是否使用自定义识别逻辑 
+                    # Added: branch to use custom language detection logic if enabled 
                     if self.language_classifier:
                         if use_custom_language_classifier:
                             print("Using custom language classifier, dectected as: ",end="")
@@ -587,10 +587,10 @@ class WhisperModel:
                     * self.feature_extractor.time_per_frame
                 )
 
-                 # ✅ 提前跳过靠近尾部的推理窗口
+                 # Early-exit: skip inference windows too close to the end
                 if time_offset >= content_duration - 1.0:
                     self.logger.debug("Skipping segment at %.2fs (near end of audio)", time_offset)
-                    break  # 或者 continue，视逻辑是否允许更多 clip_idx
+                    break  # Or continue, depending on whether more clip_idx are allowed by logic
 
                 segment_size = min(
                     self.feature_extractor.nb_max_frames,
@@ -817,8 +817,8 @@ class WhisperModel:
                     if last_word_end is not None:
                         last_speech_timestamp = last_word_end
             
-                # ✅ 提前过滤掉“太靠近尾部”的段（<1秒）
-                threshold = 1.0  # 或根据需要设为 0.8、0.5 等
+                # Filter out segments that are too close to the end (<1s)
+                threshold = 1.0  # Adjust as needed, e.g., 0.8 or 0.5
                 current_segments = [
                     s for s in current_segments
                     if s["start"] < content_duration - threshold

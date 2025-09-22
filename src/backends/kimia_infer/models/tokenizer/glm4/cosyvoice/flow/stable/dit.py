@@ -167,7 +167,7 @@ class DiffusionTransformer(nn.Module):
             prepend_cond_mask=None,
             return_info=False,
             **kwargs):
-        ### 1. 需要重新写过以适应不同长度的con
+        ### 1. TODO: rewrite to adapt to variable-length conditioning
         if cross_attn_cond is not None:
             cross_attn_cond = self.to_cond_embed(cross_attn_cond)
 

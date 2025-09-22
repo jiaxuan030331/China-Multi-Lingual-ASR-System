@@ -2,10 +2,10 @@
 cd "$(dirname "$0")"
 export PYTHONPATH=$(pwd)/..
 
-# 项目根目录
+# Project root
 PROJECT_ROOT=$(cd .. && pwd)
 
-# 默认值
+# Defaults
 WS_HOST="0.0.0.0"
 WS_PORT=9092
 WS_BACKEND="faster_whisper"
@@ -15,7 +15,7 @@ TRT_MODEL_PATH=""
 TRT_MULTILINGUAL=false
 SINGLE_MODEL=true
 
-# 解析命令行参数
+# Parse CLI arguments
 while [[ "$#" -gt 0 ]]; do
   case $1 in
     --host) WS_HOST="$2"; shift ;;
@@ -27,92 +27,92 @@ while [[ "$#" -gt 0 ]]; do
     --trt-multilingual|-m) TRT_MULTILINGUAL=true ;;
     --no-single-model) SINGLE_MODEL=false ;;
     --help-config)
-      echo "配置文件说明:"
-      echo "请确保 /workspace/ASR/src/websocket/conf/config.ini 包含:"
+      echo "Config file notes:"
+      echo "Ensure /workspace/ASR/src/websocket/conf/config.ini contains:"
       echo "[model]"
       echo "http_url=http://127.0.0.1:8001/transcribe_websocket"
       echo ""
-      echo "该URL应指向IntegratedASR的流式转写接口"
+      echo "This URL should point to the IntegratedASR streaming endpoint"
       exit 0
       ;;
     --help)
-      echo "IntegratedASR WebSocket Server 启动脚本"
+      echo "IntegratedASR WebSocket Server Startup Script"
       echo ""
-      echo "用法: $0 [选项]"
+      echo "Usage: $0 [options]"
       echo ""
-      echo "选项:"
-      echo "  --host HOST              服务器主机地址 (默认: 0.0.0.0)"
-      echo "  --port, -p PORT          WebSocket端口 (默认: 9092)"
-      echo "  --backend, -b BACKEND    后端类型 (默认: faster_whisper)"
-      echo "  --omp-threads NUM        OpenMP线程数 (默认: 1)"
-      echo "  --faster-whisper-model PATH  自定义Whisper模型路径"
-      echo "  --trt-model PATH         TensorRT模型路径"
-      echo "  --trt-multilingual       启用TensorRT多语言支持"
-      echo "  --no-single-model        禁用单模型模式"
-      echo "  --help-config            显示配置文件帮助"
-      echo "  --help                   显示此帮助信息"
+      echo "Options:"
+      echo "  --host HOST              Server host (default: 0.0.0.0)"
+      echo "  --port, -p PORT          WebSocket port (default: 9092)"
+      echo "  --backend, -b BACKEND    Backend type (default: faster_whisper)"
+      echo "  --omp-threads NUM        OpenMP threads (default: 1)"
+      echo "  --faster-whisper-model PATH  Custom Whisper model path"
+      echo "  --trt-model PATH         TensorRT model path"
+      echo "  --trt-multilingual       Enable TensorRT multilingual"
+      echo "  --no-single-model        Disable single-model mode"
+      echo "  --help-config            Show config file help"
+      echo "  --help                   Show this help"
       echo ""
-      echo "示例:"
-      echo "  $0                       # 使用默认配置启动"
-      echo "  $0 --port 9093          # 指定端口启动"
-      echo "  $0 --help-config        # 查看配置说明"
+      echo "Examples:"
+      echo "  $0                       # Start with defaults"
+      echo "  $0 --port 9093          # Start on a specific port"
+      echo "  $0 --help-config        # Show config instructions"
       exit 0
       ;;
-    *) echo "未知参数: $1"; echo "使用 --help 查看帮助"; exit 1 ;;
+    *) echo "Unknown argument: $1"; echo "Use --help for usage"; exit 1 ;;
   esac
   shift
 done
 
-# 验证配置文件
+# Validate config file
 CONFIG_FILE="/workspace/ASR/src/websocket/conf/config.ini"
 if [[ ! -f "$CONFIG_FILE" ]]; then
-  echo "❌ 配置文件不存在: $CONFIG_FILE"
-  echo "请使用 --help-config 查看配置说明"
+  echo "❌ Config file not found: $CONFIG_FILE"
+  echo "Use --help-config for instructions"
   exit 1
 fi
 
-# 验证TensorRT参数
+# Validate TensorRT args
 if [[ "$WS_BACKEND" == "tensorrt" && -z "$TRT_MODEL_PATH" ]]; then
-  echo "❌ TensorRT后端需要指定 --trt-model 参数"
+  echo "❌ TensorRT backend requires --trt-model"
   exit 1
 fi
 
-# 检查端口占用
+# Check port occupancy
 if command -v lsof >/dev/null 2>&1; then
   if lsof -Pi :$WS_PORT -sTCP:LISTEN -t >/dev/null ; then
-    echo "⚠️  警告: 端口 $WS_PORT 已被占用"
-    echo "   请使用 --port 指定其他端口或停止占用进程"
+    echo "⚠️  Warning: Port $WS_PORT is already in use"
+    echo "   Use --port to choose another port or stop the process"
     exit 1
   fi
 fi
 
-# 设置环境变量
+# Set environment variables
 export OMP_NUM_THREADS=$OMP_THREADS
 
-# 打印配置信息
-echo "🚀 启动 IntegratedASR WebSocket 服务器"
+# Print configuration
+echo "🚀 Starting IntegratedASR WebSocket server"
 echo "=================================================="
-echo "主机:          $WS_HOST"
-echo "端口:          $WS_PORT"
-echo "后端:          $WS_BACKEND"
-echo "配置文件:      $CONFIG_FILE"
-echo "OpenMP线程:    $OMP_THREADS"
+echo "Host:           $WS_HOST"
+echo "Port:           $WS_PORT"
+echo "Backend:        $WS_BACKEND"
+echo "Config file:    $CONFIG_FILE"
+echo "OpenMP threads: $OMP_THREADS"
 if [[ -n "$CUSTOM_MODEL_PATH" ]]; then
-  echo "自定义模型:    $CUSTOM_MODEL_PATH"
+  echo "Custom model:   $CUSTOM_MODEL_PATH"
 fi
 if [[ -n "$TRT_MODEL_PATH" ]]; then
-  echo "TensorRT模型:  $TRT_MODEL_PATH"
-  echo "多语言支持:    $TRT_MULTILINGUAL"
+  echo "TensorRT model: $TRT_MODEL_PATH"
+  echo "Multilingual:   $TRT_MULTILINGUAL"
 fi
-echo "单模型模式:    $SINGLE_MODEL"
+echo "Single model:   $SINGLE_MODEL"
 echo "=================================================="
 
-# 切换到项目根目录
+# Switch to project root
 cd "$PROJECT_ROOT"
 
 
 
-# 构建Python命令参数
+# Build Python command args
 PYTHON_ARGS="--host $WS_HOST --port $WS_PORT --backend $WS_BACKEND --omp_num_threads $OMP_THREADS"
 
 if [[ -n "$CUSTOM_MODEL_PATH" ]]; then
@@ -131,8 +131,8 @@ if [[ "$SINGLE_MODEL" == "false" ]]; then
   PYTHON_ARGS="$PYTHON_ARGS --no_single_model"
 fi
 
-# 启动服务器
-echo "🔧 启动WebSocket服务中..."
+# Start server
+echo "🔧 Starting WebSocket service..."
 python -c "
 import os
 import sys
@@ -141,7 +141,7 @@ sys.path.insert(0, '.')
 from src.websocket.server import TranscriptionServer
 import argparse
 
-# 解析参数
+# Parse args
 parser = argparse.ArgumentParser()
 parser.add_argument('--host', default='0.0.0.0')
 parser.add_argument('--port', type=int, default=9092)
@@ -154,7 +154,7 @@ parser.add_argument('--no_single_model', action='store_true')
 
 args = parser.parse_args('$PYTHON_ARGS'.split())
 
-# 启动服务器
+# Launch server
 server = TranscriptionServer()
 server.run(
     args.host,

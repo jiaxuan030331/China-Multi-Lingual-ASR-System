@@ -549,7 +549,7 @@ class BlockRelPositionMultiHeadedAttention(MultiHeadedAttention):
         q, k, v = self.forward_qkv(query, key, value)
         q = q.transpose(1, 2)  # (batch, time1, head, d_k)
 
-        # 0代表被mask的位置
+        # 0 indicates masked positions
         bs, time_len, _ = query.shape
         # mask = torch.tril(torch.ones(time_len, time_len).to(mask), diagonal=0).int()
         # block_size = self.block_size

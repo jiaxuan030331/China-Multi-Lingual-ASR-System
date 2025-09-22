@@ -1,9 +1,9 @@
 # src/app/__init__.py
 
 """
-IntegratedASR 应用层封装
+IntegratedASR application layer wrappers
 
-提供简洁的API接口，方便FastAPI等部署使用，参考kimi_deployment的设计模式
+Provide a simple API surface for deployment (e.g., FastAPI), inspired by kimi_deployment's structure
 """
 
 from .load_model import load_integrated_asr, get_model_instance, close_model
