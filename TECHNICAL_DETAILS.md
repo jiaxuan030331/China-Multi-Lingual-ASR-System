@@ -2,6 +2,36 @@
 
 This document summarizes the design and implementation details of the Integrated ASR service.
 
+## Repository Structure
+```
+ASR/
+  models/
+    lid/                          # Language ID models (e.g., language_fnn_only2.pt)
+  scripts/
+    run_integrated_asr.sh         # Start FastAPI API
+    run_websocket_server.sh       # Start streaming proxy server
+  src/
+    app/
+      fastapi_api.py              # FastAPI app (endpoints: /transcribe, /transcribe_websocket, /warmup)
+      load_model.py               # Model lifecycle (singleton + locking)
+      transcribe.py               # App-level transcription wrappers
+    core/
+      integrated_asr.py           # Orchestration, routing, timing
+    backends/
+      faster_whisper_transcriber.py
+      kimia_infer/                # Kimi tokenizer & helpers (adapted)
+    websocket/
+      server.py                   # Frame-based streaming server
+      conf/config.ini             # Target FastAPI URL
+  tests/
+    backend_demo.py               # Basic backend test
+    fastapi_demo.py               # API demo
+    websocket_demo.py             # Streaming demo
+  README.md
+  TECHNICAL_DETAILS.md
+  requirements.txt
+```
+
 ## Architecture
 - Dual-encoder/dual-backend design:
   - Faster-Whisper (CTranslate2) for broad multilingual coverage and efficient decoding
