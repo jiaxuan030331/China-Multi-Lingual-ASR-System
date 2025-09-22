@@ -30,30 +30,42 @@ ASR/
 
 ### Architecture (Mermaid)
 ```mermaid
-flowchart TD
+flowchart LR
+  %% =======================
+  %% Kimi (Embeddings path)
+  %% =======================
   subgraph KIMI["Kimi (Embeddings)"]
-    direction TB
-    K_T[Text]
-    K_A[Audio]
-    K_TK[GLM-4 Tokenizer]
-    K_WE[Whisper Encoder]
-    K_E[Embedding Layer]
+    direction LR
+    K_T["Text"]:::kimi
+    K_A["Audio"]:::kimi
+    K_TK["GLM-4 Tokenizer"]:::kimi
+    K_WE["Whisper Encoder"]:::kimi
+    K_E["Embedding Layer"]:::kimi
 
     K_T --> K_TK --> K_E
     K_A --> K_TK
     K_A --> K_WE --> K_E
   end
 
+  %% ============================
+  %% faster-whisper (CT2) system
+  %% ============================
   subgraph FW["faster-whisper (CT2)"]
-    direction TB
-    F_A[Audio]
-    F_WE[Whisper Encoder]
-    F_LD{Language Detection}
-    F_D[Decoder]
-    F_TXT[Text]
+    direction LR
+    F_A["Audio"]:::fw
+    F_WE["Whisper Encoder"]:::fw
+    F_LD{"Language Detection"}:::decision
+    F_D["Decoder"]:::fw
+    F_TXT["Text"]:::fw
 
     F_A --> F_WE --> F_LD --> F_D --> F_TXT
   end
+
+  %% --------- Styles (Contrasted Colors) ---------
+  classDef kimi fill:#E6F2FF,stroke:#1E90FF,color:#0B3D91,stroke-width:1.5px;
+  classDef fw fill:#FFF5E6,stroke:#FF8C00,color:#7F4F00,stroke-width:1.5px;
+  classDef int fill:#E6FFEE,stroke:#2E8B57,color:#0F5132,stroke-width:1.5px;
+  classDef decision fill:#FFF0F6,stroke:#C71585,color:#5B1A42,stroke-width:1.5px;
 '''
  
 
