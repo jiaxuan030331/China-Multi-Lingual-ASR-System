@@ -29,6 +29,8 @@ ASR/
 ```
 
 ### Architecture (Mermaid)
+
+- Backend structures
 ```mermaid
 flowchart LR
   %% =======================
@@ -66,6 +68,8 @@ flowchart LR
   classDef fw fill:#FFF5E6,stroke:#FF8C00,color:#7F4F00,stroke-width:1.5px;
   classDef decision fill:#FFF0F6,stroke:#C71585,color:#5B1A42,stroke-width:1.5px;
 ```
+
+- Integrated System
 ```mermaid
 flowchart LR
   %% =======================
@@ -97,8 +101,27 @@ flowchart LR
   classDef int fill:#E6FFEE,stroke:#2E8B57,color:#0F5132,stroke-width:1.5px;
   classDef decision fill:#FFF0F6,stroke:#C71585,color:#5B1A42,stroke-width:1.5px;
 ```
+
+
+## Minimal Demo
+- Start API (default port 8001):
+```
+./scripts/run_integrated_asr.sh --no-warmup
+```
+- Transcribe a file:
+```
+curl -X POST -F "file=@audio_examples/mandarin.mp3" \
+  http://127.0.0.1:8001/transcribe
+```
+- Start streaming proxy (default port 9092):
+```
+./scripts/run_websocket_server.sh
+```
+Ensure `src/websocket/conf/config.ini` targets:
+```
 [model]
 http_url=http://127.0.0.1:8001/transcribe_websocket
+```
 
 
 ## Demo
@@ -117,3 +140,8 @@ http_url=http://127.0.0.1:8001/transcribe_websocket
 - Kimi-Audio (GLM4) by MoonshotAI: [Kimi-Audio GitHub](https://github.com/MoonshotAI/Kimi-Audio)
 - Faster-Whisper by SYSTRAN: [faster-whisper GitHub](https://github.com/SYSTRAN/faster-whisper)
 - Whisper by OpenAI: [whisper GitHub](https://github.com/openai/whisper)
+
+## To-dos
+- Dockerfile
+- sliding window transcription for further performance
+- Database System and more detailed logs
