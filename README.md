@@ -96,9 +96,10 @@ flowchart LR
   %% --------- Styles (Contrasted Colors) ---------
   classDef int fill:#E6FFEE,stroke:#2E8B57,color:#0F5132,stroke-width:1.5px;
   classDef decision fill:#FFF0F6,stroke:#C71585,color:#5B1A42,stroke-width:1.5px;
+```
 [model]
 http_url=http://127.0.0.1:8001/transcribe_websocket
-```
+
 
 ## Demo
 - Screen recording: [demo_screen_recording.mp4](./demo_screen_recording.mov)
