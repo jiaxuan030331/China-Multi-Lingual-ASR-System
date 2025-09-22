@@ -33,7 +33,7 @@ while [[ "$#" -gt 0 ]]; do
       echo "Options:"
       echo "  --ct2-model PATH     CTranslate2 Whisper model path (default: large-v3)"
       echo "  --kimi-model PATH    Kimi model path (default: moonshotai/Kimi-Audio-7B-Instruct)"
-      echo "  --lid-model PATH     Language ID model path (default: ./WhisperLive/language_fnn_only2.pt)"
+      echo "  --lid-model PATH     Language ID model path (default: ./models/lid/language_fnn_only2.pt)"
       echo "  --confidence NUM     Language confidence threshold (default: 0.7)"
       echo "  --port NUM           Service port (default: 8001)"
       echo "  --workers NUM        Worker processes (default: 1)"
