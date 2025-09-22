@@ -11,11 +11,20 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 
 ## 🏗️ System Architecture
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "background": "#ffffff",
+    "textColor": "#111827",
+    "lineColor": "#111827"
+  }
+}}%%
 flowchart TB
+
   %% =======================
   %% Systems (top row)
   %% =======================
-  subgraph SYS["Systems"]
+  subgraph TOP["Systems"]
     direction LR
 
     %% ---- Kimi (Embeddings) ----
@@ -59,23 +68,22 @@ flowchart TB
     I_CT2D["CT2 Whisper Decoder"]:::fw
     I_OUT["Text"]:::neutral
 
-    %% Text/Audio -> GLM-4 -> Kimi decoder -> Text
-    I_TXT --> I_GLM4
+    %% Path via Kimi
+    I_TXT --> I_GLM4 --> I_KIMID --> I_OUT
     I_AUD --> I_GLM4
-    I_GLM4 --> I_KIMID --> I_OUT
 
-    %% Audio -> CT2 encoder -> detection -> route
+    %% Path via faster-whisper (CT2)
     I_AUD --> I_CT2E --> I_DET
     I_DET -- "English or Mandarin" --> I_KIMID
     I_DET -- "Other languages" --> I_CT2D --> I_OUT
   end
 
   %% =======================
-  %% High-contrast styles
+  %% Styles
   %% =======================
-  classDef neutral fill:#ffffff,stroke:#111827,color:#111827;   %% crisp white nodes
-  classDef kimi    fill:#e8f1ff,stroke:#1d4ed8,color:#0f172a;   %% soft blue for Kimi parts
-  classDef fw      fill:#eaffea,stroke:#16a34a,color:#0f172a;   %% soft green for CT2 parts
+  classDef neutral fill:#ffffff,stroke:#111827,color:#111827;
+  classDef kimi    fill:#e8f1ff,stroke:#1d4ed8,color:#111827;   %% blue
+  classDef fw      fill:#eaffea,stroke:#16a34a,color:#111827;   %% light green
 ```
 
 ## 🌟 Key Features
