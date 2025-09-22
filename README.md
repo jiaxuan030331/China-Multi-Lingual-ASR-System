@@ -12,6 +12,7 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 ## 🏗️ System Architecture
 ```mermaid
 %%{init:{
+%%{init:{
   "theme":"base",
   "themeVariables":{
     "background":"#ffffff","textColor":"#111111","lineColor":"#111111",
