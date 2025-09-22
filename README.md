@@ -11,27 +11,7 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 
 ## 🏗️ System Architecture
 ```mermaid
-flowchart LR
-  %% Kimi: multimodal -> embedding
-  subgraph Kimi
-    direction LR
-    T["Text"]
-    A["Audio"]
-    TK["GLM-4 Tokenizer"]
-    WE["Whisper Encoder"]
-    E["Embedding Layer"]
 
-    T  --> TK
-    A  --> TK
-    A  --> WE
-    TK --> E
-    WE --> E
-    end
-flowchart LR
-  subgraph "faster-whisper"
-    direction LR
-    A["Audio"] --> WE["Whisper Encoder"] --> LD["Language Detection"] --> D["Decoder"]
-  end
 flowchart LR
   subgraph Integration
     direction LR
