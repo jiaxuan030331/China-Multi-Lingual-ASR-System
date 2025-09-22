@@ -64,30 +64,42 @@ flowchart LR
   %% --------- Styles (Contrasted Colors) ---------
   classDef kimi fill:#E6F2FF,stroke:#1E90FF,color:#0B3D91,stroke-width:1.5px;
   classDef fw fill:#FFF5E6,stroke:#FF8C00,color:#7F4F00,stroke-width:1.5px;
+  classDef decision fill:#FFF0F6,stroke:#C71585,color:#5B1A42,stroke-width:1.5px;
+```
+```mermaid
+flowchart LR
+  %% =======================
+  %% Project Integration
+  %% =======================
+  subgraph INT["Integration (Project flow)"]
+    direction LR
+    I_TXT["Text"]:::int
+    I_AUD["Audio"]:::int
+    I_GLM4["GLM-4"]:::int
+    I_KIMID["Kimi Decoder"]:::int
+    I_CT2E["CT2 Whisper Encoder"]:::int
+    I_DET{"English / Mandarin?"}:::decision
+    I_CT2D["CT2 Whisper Decoder"]:::int
+    I_OUT["Text"]:::int
+
+    %% Text/Audio -> GLM-4 -> Kimi decoder -> Text
+    I_TXT --> I_GLM4
+    I_AUD --> I_GLM4
+    I_GLM4 --> I_KIMID --> I_OUT
+
+    %% Audio -> CT2 encoder -> detection -> route
+    I_AUD --> I_CT2E --> I_DET
+    I_DET -- "English or Mandarin" --> I_KIMID
+    I_DET -- "Other languages" --> I_CT2D --> I_OUT
+  end
+
+  %% --------- Styles (Contrasted Colors) ---------
   classDef int fill:#E6FFEE,stroke:#2E8B57,color:#0F5132,stroke-width:1.5px;
   classDef decision fill:#FFF0F6,stroke:#C71585,color:#5B1A42,stroke-width:1.5px;
-'''
- 
-
-## Minimal Demo
-- Start API (default port 8001):
-```
-./scripts/run_integrated_asr.sh --no-warmup
-```
-- Transcribe a file:
-```
-curl -X POST -F "file=@audio_examples/mandarin.mp3" \
-  http://127.0.0.1:8001/transcribe
-```
-- Start streaming proxy (default port 9092):
-```
-./scripts/run_websocket_server.sh
-```
-Ensure `src/websocket/conf/config.ini` targets:
-```
 [model]
 http_url=http://127.0.0.1:8001/transcribe_websocket
 ```
+
 ## Demo
 - Screen recording: [demo_screen_recording.mp4](./demo_screen_recording.mov)
 
