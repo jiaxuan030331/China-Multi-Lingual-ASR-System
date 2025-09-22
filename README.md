@@ -11,8 +11,8 @@ This system provides real-time semi-streaming transcription via WebSocket fronte
 
 ## 🏗️ System Architecture
 ```mermaid
-
 flowchart LR
+  %% Integration (GitHub-friendly)
   subgraph Integration
     direction LR
     TXT["Text"]
@@ -20,7 +20,7 @@ flowchart LR
     GLM4["GLM-4"]
     KIMI["Kimi Decoder"]
     CT2E["CT2 Whisper Encoder"]
-    DET{"English / Mandarin?"}
+    DET{"Language detected?"}
     CT2D["CT2 Whisper Decoder"]
     OUT["Text"]
 
@@ -29,10 +29,11 @@ flowchart LR
     AUD --> GLM4
     GLM4 --> KIMI --> OUT
 
-    %% Audio -> CT2 encoder -> (self-handled) language detection
-    AUD --> CT2E -->|Language detection (self-handled)| DET
-    DET -- English/Mandarin --> KIMI
-    DET -- Others --> CT2D --> OUT
+    %% Audio -> CT2 encoder -> detection -> route
+    AUD --> CT2E
+    CT2E -- "Language detection (self-handled)" --> DET
+    DET  -- "English or Mandarin" --> KIMI
+    DET  -- "Other languages"     --> CT2D --> OUT
   end
 ```
 
