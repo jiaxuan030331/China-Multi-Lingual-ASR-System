@@ -52,15 +52,13 @@ aiohappyeyeballs
 python-multipart
 httptools
 uvloop
-PyAudio
 ffmpeg-python
 websocket-client
 
 numba
 kaldialign
 
-# === Flash Attention 需要单独安装 ===
-# 请在安装完上述所有包后，单独运行：
+# === Flash Attention needs to be installed seperately ===
 # pip install flash_attn==2.7.4.post1 --no-build-isolation
 
 
