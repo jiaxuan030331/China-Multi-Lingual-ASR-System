@@ -56,7 +56,7 @@ uvloop
 PyAudio
 ffmpeg-python
 websocket-client
-websocket-python
+
 numba
 kaldialign
 
