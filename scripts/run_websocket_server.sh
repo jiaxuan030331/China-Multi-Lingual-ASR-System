@@ -63,11 +63,19 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
-# Validate config file
-CONFIG_FILE="/workspace/ASR/src/websocket/conf/config.ini"
+# ---- Config file handling (no hard-coded dev path) ----
+DEFAULT_CONFIG_FILE="$PROJECT_ROOT/src/websocket/conf/config.ini"
+CONFIG_FILE="${CONFIG_FILE:-$DEFAULT_CONFIG_FILE}"  # env override
+
+# Parse CLI arguments (新增一个 --config)
+# ...在 while [[ "$#" -gt 0 ]] 的 case 里加一条：
+#   --config) CONFIG_FILE="$2"; shift ;;
+
+# Validate Config
 if [[ ! -f "$CONFIG_FILE" ]]; then
   echo "❌ Config file not found: $CONFIG_FILE"
-  echo "Use --help-config for instructions"
+  echo "   Tried default: $DEFAULT_CONFIG_FILE"
+  echo "   Pass --config <path> or set env CONFIG_FILE to override"
   exit 1
 fi
 
