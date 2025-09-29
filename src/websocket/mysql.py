@@ -6,7 +6,7 @@
 # Copyright (c) 2016 Orthm.com, Inc. All Rights Reserved
 #
 # **************************************************************************/
-import pymysql
+#import pymysql
 import configparser
 Version='V1'
 class MySQL():
