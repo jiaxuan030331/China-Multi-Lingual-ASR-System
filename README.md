@@ -106,16 +106,16 @@ flowchart LR
 ## Minimal Demo
 
 - (Optional) create and activate venv
-'''
+```
 python3 -m venv .venv && source .venv/bin/activate
-'''
+```
 
 - Get the code and install
-'''
+```
 git clone https://github.com/jiaxuan030331/China-Multi-Lingual-ASR-System.git
 cd China-Multi-Lingual-ASR-System
 !pip -q install -r requirements.txt
-'''
+```
 
 - Start API (default port 8001):
 ```
