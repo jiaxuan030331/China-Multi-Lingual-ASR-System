@@ -40,7 +40,6 @@ tqdm
 deepspeed==0.16.9
 pydub
 scipy
-PyAudio
 faster-whisper==1.1.1
 
 # === Web 后端与 API ===
